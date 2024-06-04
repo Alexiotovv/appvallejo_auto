@@ -1,0 +1,4 @@
+/appvallejo_auto/settings.py
+**/__pycache__/
+*.py.swo
+/cobranzas/*.*
