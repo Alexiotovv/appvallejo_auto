@@ -7,7 +7,9 @@ import requests
 from datetime import datetime as dt
 import pandas as pd
 import os
+from appMain.models import *
 from PIL import Image, ImageDraw, ImageFont
+
 
 def index(request):
     return render(request, 'metricas/index.html')
@@ -28,6 +30,7 @@ def obtener_deudores(request):
         mes_ultimo_vcmto = mes_actual
 
     data = union_alumnos_pagos()
+    ###########este bloque se repite en la otra función es para optimizar
     df = pd.DataFrame(data)
     
     # Lista de todos los meses de marzo a diciembre
@@ -44,16 +47,18 @@ def obtener_deudores(request):
     df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
 
     df = df[df['MesesDebe'].apply(len) > 0]
-
-    print(df)
+    ############cierre del bloque que se repite##########333
+    
     generar_imagenes_cobranzas(df)
+
+    df.to_excel('cobranzas/lista_deben.xlsx')
 
     resultado={'data':'success','message':'ok'}
     return JsonResponse(resultado,safe=False)
 
 
 def generar_imagenes_cobranzas(df):
-    
+
     fecha_actual = dt.now()
     
     if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/1°'):
@@ -82,42 +87,78 @@ def generar_imagenes_cobranzas(df):
 
     
     font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    #font_path = "C:/Windows/Fonts/arial.ttf"
+    font_path_numero = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
     font = ImageFont.truetype(font_path, 20)
+    font_carta=ImageFont.truetype(font_path_numero, 38)
 
+    cartasenviadas=CartasEnviadas.objects.all()
 
+    cartasenviadas_dict={cartas.dni_alumno:cartas.numero_carta for cartas in cartasenviadas}
+
+    
     for index, row in df.iterrows():
-        #comentamos porque ya no dibujamos la imagen
-        # imagen = Image.new('RGB', (1748, 2480), color=(255, 255, 255))
-        # d = ImageDraw.Draw(imagen)
-
         #usamos la imagen
         imagen = Image.open('cobranzas/plantilla_cobranza_2024.jpg')
         d = ImageDraw.Draw(imagen)
 
         alumno_papel= f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}"
-        # DNI: {row['DNI']}
+        dni_alumno= f"{row['DNI']}"
+        
+        numero_carta_obtenida = cartasenviadas_dict.get(dni_alumno, {})
+
         grado_papel=f"{row['Grado']}"
         seccion_papel =f"{row['Seccion']}"
         meses_debe_papel= f"{', '.join(row['MesesDebe'])}"
-            
-        padres_papel= f"{row['Apoderado']}"
+        cantidad_meses=meses_debe_papel.split(",")
+        cantidad_meses=len(cantidad_meses)
+        total_deuda=cantidad_meses*250
+        direccion=f"{row['Direccion']}"
         
-            
+        padres_papel= f"{row['Apoderado']}"
+        mapeo_caracteres = {
+            "Ã": "Á",
+            "Ã‰": "É",
+            "Ã": "Í",
+            "Ã“": "Ó",
+            "Ãš": "Ú",
+            "Ã±": "ñ",
+            "Ã‘": "Ñ",
+            "Âª":"°",
+            "Â°":"°"
+        }
 
-        d.text((230,425), padres_papel, font=font, fill=(0, 0, 0))
+        cadena_mal_codificada = padres_papel
+        cadena_mal_codificada_dire = direccion
+
+        padres_cadena_corregida = cadena_mal_codificada
+        for mal_codificado, correctamente_codificado in mapeo_caracteres.items():
+            padres_cadena_corregida = padres_cadena_corregida.replace(mal_codificado, correctamente_codificado)
+
+        direccion_cadena_corregida = cadena_mal_codificada_dire
+        for mal_codificado, correctamente_codificado in mapeo_caracteres.items():
+            direccion_cadena_corregida = direccion_cadena_corregida.replace(mal_codificado, correctamente_codificado)
+
+
+        meses={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Setiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'}
+        dia_papel=dt.now().day
+        mes_papel=meses.get(dt.now().month)
+        anhio_papel=dt.now().year
+        fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
+
+        d.text((900,298), "N° "+ str(int(numero_carta_obtenida+1)), font=font_carta, fill=(0, 0, 0))
+        d.text((230,425), padres_cadena_corregida, font=font, fill=(0, 0, 0))
         d.text((290,475), alumno_papel, font=font, fill=(0, 0, 0))
         d.text((430,528), grado_papel,font=font, fill=(0, 0, 0))
         d.text((520,528), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
-        d.text((330,635), meses_debe_papel,font=font, fill=(0, 0, 0))
-
+        d.text((330,635), meses_debe_papel+"  S/ "+ str(total_deuda)+".00",font=font, fill=(0, 0, 0))
+        d.text((800,1225), fecha_actual_largo,font=font, fill=(0, 0, 0))
+        d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
 
         nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
         grado=row['Grado'][:1]+"°"
         seccion=row['Seccion']
         
-
         if row['Grado'][1:5]=='PRIM':
             if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/'+grado+'/'+seccion):
                 os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/'+grado+'/'+seccion)
@@ -131,13 +172,7 @@ def generar_imagenes_cobranzas(df):
             image_path = f"cobranzas/{fecha_actual}/SECUNDARIA/{grado}/{seccion}/{row['DNI']}_{nombre_alumno}.jpg"
 
         imagen.save(image_path)
-
-        # for num in numeros_telefonos:
-        #     enviar_imagen_whatsapp(num[index], image_path)
-
-
-
-
+        
 
 def union_alumnos_pagos():
     resultados = []
@@ -145,6 +180,7 @@ def union_alumnos_pagos():
         #conectandonos a la base de facturacion
         connection = connections['facturacion']
         connection.ensure_connection()
+
         cursor = connection.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute("SELECT * FROM view_pagos vp")
         pagos = cursor.fetchall()
@@ -161,16 +197,13 @@ def union_alumnos_pagos():
             return JsonResponse({"error": "No se pudieron obtener los datos de la API."}, status=500)
 
         
-        # #aqui codigo para mostrar solo registros
-        # # Convertir los pagos en un diccionario con el DNI como clave para facilitar la búsqueda
-        
-        # Crear la lista combinada de alumnos con datos de pagos
-        # pagos_dict = {str(pago['Dni']).strip(): pago for pago in pagos}
         apoderados_dict={str(apo['Dni']).strip(): apo for apo in apoderados}
-        
+        direcciones_dic={str(dire['Dni']).strip():dire for dire in pagos}
+
         for alumno in alumnos:
             dni = str(alumno.get('Dni')).strip()
             apoderados=apoderados_dict.get(dni,{})
+            direcciones=direcciones_dic.get(dni,{})
             # Combinar los datos de alumno y pago
             combinado = {
                 'id': alumno.get('Id'),
@@ -200,6 +233,7 @@ def union_alumnos_pagos():
                 # 'DiasAtraso': pago.get('DiasAtraso'),
                 # 'MesesAtraso': pago.get('MesesAtraso'),
                 'Apoderado': apoderados.get('Apoderado'),
+                'Direccion': direcciones.get('Direccion'),
             }
 
             resultados.append(combinado)
@@ -231,3 +265,42 @@ def obtener_datos_de_api(url):
 
 
 
+def guardar_numeros_cartas(request):
+    
+    
+
+    vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
+    
+    fecha_actual = dt.now().date()
+    mes_actual = dt.now().month
+
+    fecha_vcmto = fecha_actual.replace(day=vcmtos[mes_actual])
+
+    if fecha_actual < fecha_vcmto:
+        mes_ultimo_vcmto = mes_actual - 1
+    else:
+        mes_ultimo_vcmto = mes_actual
+
+    data = union_alumnos_pagos()
+
+    df = pd.DataFrame(data)
+    todos_los_meses = ['MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+    
+    meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
+
+    def obtener_meses_debe(meses_pagados):
+        return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
+
+    df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
+
+    df = df[df['MesesDebe'].apply(len) > 0]
+    lista_dnies = list(df['DNI'])
+
+    cartas_a_actualizar = CartasEnviadas.objects.filter(dni_alumno__in=lista_dnies)
+
+    for carta in cartas_a_actualizar:
+        carta.numero_carta += 1
+        carta.save()
+    
+    resultado={'data':'success','message':'ok'}
+    return JsonResponse(resultado,safe=False)

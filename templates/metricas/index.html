@@ -1,8 +1,31 @@
 {% extends "bases/base.html" %}
 
 {% block content %}
-    estas en metricas
-    <button class="btn btn-primary btn-sm" onclick="obtenerDatos()">ObtenerDatos</button>
+    <div class="row">
+        <div class="col-md-6">
+            <label for="">Generar Cartas Cobranza</label>
+            <br>
+            <button class="btn btn-primary btn-sm" onclick="obtenerDatos()">Procesar Cartas Cobranza</button>
+            
+            <div id="espere" hidden>Procesando Cartas Cobranza, por favor espere...</div>
+            <div class="text" id="spinner" hidden>
+                <div class="spinner-border" role="status">
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <label for="">Guardar Números de Cartas</label>
+            <br>
+            <button class="btn btn-primary btn-sm" onclick="guardarNumerosCartas()">Guardar</button>
+            <div id="espere_numeros_cartas" hidden>Procesando Números Cartas, por favor espere...</div>
+            <div class="text" id="spinner_numeros_cartas" hidden>
+                <div class="spinner-border" role="status">
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% comment %} {% for d in data %}
         <h4>{{d.DNI}}</h4>
     {% endfor %} {% endcomment %}
@@ -12,15 +35,40 @@
     
     <script>
         function obtenerDatos(){
+            
             $.ajax({
                 type: "GET",
                 url: "{% url 'appobtener_deudores' %}",
                 dataType: "json",
+                beforeSend: function() {
+                    $("#spinner").prop('hidden',false);
+                    $("#espere").text("Procesando Números Cartas, por favor espere...")
+                    $("#espere").prop('hidden',false)
+                },
                 success: function (data) {
-                    console.log(data)
+                    $("#spinner").prop('hidden',true);
+                    $("#espere").text("Completado!")
                 }
             });
         }
-        
+    </script>
+    <script>
+        function guardarNumerosCartas(){
+            $.ajax({
+                type: "POST",
+                url: "{% url 'appguardarnumeros_cartas' %}",
+                dataType: "json",
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                beforeSend: function() {
+                    $("#spinner_numeros_cartas").prop('hidden',false);
+                    $("#espere_numeros_cartas").text("Procesando Números Cartas, por favor espere...")
+                    $("#espere_numeros_cartas").prop('hidden',false)
+                },
+                success: function (data) {
+                    $("#spinner_numeros_cartas").prop('hidden',true);
+                    $("#espere_numeros_cartas").text("Completado!")
+                }
+            });
+        }
     </script>
 {% endblock js %}
