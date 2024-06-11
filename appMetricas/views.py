@@ -17,7 +17,7 @@ def index(request):
 def obtener_deudores(request):        
 
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
-    meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
+    #meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
     
     fecha_actual = dt.now().date()
     mes_actual = dt.now().month
@@ -40,13 +40,29 @@ def obtener_deudores(request):
     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
 
     # Función para obtener los meses que debe un alumno
-    def obtener_meses_debe(meses_pagados):
-        return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
-
+    def obtener_meses_debe(meses_pagados,montos_pagados):
+        # return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
+        meses_debe = []
+        montos_debe = []
+        for mes in meses_hasta_ultimo_vencimiento:
+            if mes in meses_pagados:
+                idx = meses_pagados.index(mes)
+                monto_pagado = montos_pagados[idx]
+                if monto_pagado < 250:
+                    meses_debe.append(mes)
+                    montos_debe.append(250 - monto_pagado)
+            else:
+                meses_debe.append(mes)
+                montos_debe.append(250)
+        return meses_debe, montos_debe
+    
     # Aplicar la función a cada fila
-    df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
+    # df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe) 
+    df[['MesesDebe', 'MontosDebe']] = df.apply(lambda row: pd.Series(obtener_meses_debe(row['Mes'], row['Monto'])), axis=1)
 
-    df = df[df['MesesDebe'].apply(len) > 0]
+
+    df = df[df['MesesDebe'].apply(len) > 0] #filtra solamente a los deudores que se quedan los que tienen meses
+
     ############cierre del bloque que se repite##########333
     
     generar_imagenes_cobranzas(df)
@@ -105,13 +121,18 @@ def generar_imagenes_cobranzas(df):
         alumno_papel= f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}"
         dni_alumno= f"{row['DNI']}"
         
-        numero_carta_obtenida = cartasenviadas_dict.get(dni_alumno, {})
-
+        numero_carta_obtenida = cartasenviadas_dict.get(dni_alumno, 0)
+         
         grado_papel=f"{row['Grado']}"
         seccion_papel =f"{row['Seccion']}"
         meses_debe_papel= f"{', '.join(row['MesesDebe'])}"
+        # print(dni_alumno)
+        # print(str(row['MontosDebe']))
+        # print(str(row['MesesDebe']))
+        # montos_debe_papel= f"{', '.join(str(row['MontosDebe']))}"
         cantidad_meses=meses_debe_papel.split(",")
         cantidad_meses=len(cantidad_meses)
+        
         total_deuda=cantidad_meses*250
         direccion=f"{row['Direccion']}"
         
@@ -151,7 +172,7 @@ def generar_imagenes_cobranzas(df):
         d.text((290,475), alumno_papel, font=font, fill=(0, 0, 0))
         d.text((430,528), grado_papel,font=font, fill=(0, 0, 0))
         d.text((520,528), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
-        d.text((330,635), meses_debe_papel+"  S/ "+ str(total_deuda)+".00",font=font, fill=(0, 0, 0))
+        d.text((330,635), meses_debe_papel+"  S/ "+ str(total_deuda)+".00  ",font=font, fill=(0, 0, 0))
         d.text((800,1225), fecha_actual_largo,font=font, fill=(0, 0, 0))
         d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
 
@@ -188,6 +209,10 @@ def union_alumnos_pagos():
         cursor2 = connection.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor2.execute("SELECT person.numero_documento as 'Dni', person.email1 as 'Apoderado' FROM person where person.email1 != '' ")
         apoderados = cursor2.fetchall()
+
+        cursor3 = connection.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor3.execute("SELECT person.numero_documento as 'Dni', person.address1 as 'Direccion' FROM person where person.address1 != '' ")
+        direcciones = cursor3.fetchall()
         
         # #consumiendo la api del sistema de notas
         url = "https://colcoopcv.com/listar/matriculados/2024"
@@ -198,7 +223,7 @@ def union_alumnos_pagos():
 
         
         apoderados_dict={str(apo['Dni']).strip(): apo for apo in apoderados}
-        direcciones_dic={str(dire['Dni']).strip():dire for dire in pagos}
+        direcciones_dic={str(dire['Dni']).strip():dire for dire in direcciones}
 
         for alumno in alumnos:
             dni = str(alumno.get('Dni')).strip()
@@ -224,8 +249,9 @@ def union_alumnos_pagos():
                 # 'Grado': pago.get('Grado'),
                 # 'Seccion': pago.get('Seccion'),
                 # 'Concepto': pago.get('Concepto'),
-                'Mes': [p['Mes'].upper() for p in pagos if p['Dni'] == dni] ,
-                # 'TipoIngreso': pazgo.get('TipoIngreso'),
+                'Mes': [p['Mes'].upper() for p in pagos if p['Dni'] == dni],
+                'Monto': [p['Monto'] for p in pagos if p['Dni'] == dni],
+                # 'TipoIngreso': pago.get('TipoIngreso'),
                 # 'ConceptoNumeroMes': pago.get('ConceptoNumeroMes'),
                 # 'FechaVencimiento': pago.get('FechaVencimiento'),
                 # 'LetraMesPago': pago.get('LetraMesPago'),
@@ -245,6 +271,7 @@ def union_alumnos_pagos():
     finally:
         cursor.close()
         cursor2.close()
+        cursor3.close()
         connection.close()
 
 def obtener_datos_de_api(url):
@@ -267,8 +294,6 @@ def obtener_datos_de_api(url):
 
 def guardar_numeros_cartas(request):
     
-    
-
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
     
     fecha_actual = dt.now().date()
