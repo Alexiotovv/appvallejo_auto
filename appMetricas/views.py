@@ -249,7 +249,7 @@ def union_alumnos_pagos():
                 # 'Grado': pago.get('Grado'),
                 # 'Seccion': pago.get('Seccion'),
                 # 'Concepto': pago.get('Concepto'),
-                'Mes': [p['Mes'].upper() for p in pagos if p['Dni'] == dni],
+                'Mes': [p['Mes'] for p in pagos if p['Dni'] == dni],
                 'Monto': [p['Monto'] for p in pagos if p['Dni'] == dni],
                 # 'TipoIngreso': pago.get('TipoIngreso'),
                 # 'ConceptoNumeroMes': pago.get('ConceptoNumeroMes'),
