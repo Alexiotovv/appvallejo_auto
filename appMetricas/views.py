@@ -10,6 +10,7 @@ import os
 from appMain.models import *
 from PIL import Image, ImageDraw, ImageFont
 import platform
+from django.conf import settings
 
 def index(request):
     return render(request, 'metricas/index.html')
@@ -110,8 +111,8 @@ def generar_imagenes_cobranzas(df):
     cartasenviadas=CartasEnviadas.objects.all()
 
     cartasenviadas_dict={cartas.dni_alumno:cartas.numero_carta for cartas in cartasenviadas}
-
-    plantilla_cobranza=os.path.join('cobranzas','plantilla_cobranza_2024.jpeg')
+    
+    plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_cobranza_2024.jpeg')
 
     for index, row in df.iterrows():
         #usamos la imagen
