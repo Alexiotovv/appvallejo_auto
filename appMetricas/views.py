@@ -75,7 +75,7 @@ def obtener_deudores(request):
 
 def generar_imagenes_cobranzas(df):
 
-    fecha_actual = dt.now()
+    fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
     
     if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/1°'):
         os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/1°')
