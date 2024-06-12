@@ -101,7 +101,18 @@ def generar_imagenes_cobranzas(df):
     if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°'):
         os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°')
 
-    
+    font_paths = [
+        "C:/Windows/Fonts/DejaVuSans-Bold.ttf",
+        "C:/Windows/Fonts/DejaVuSans.ttf"
+    ]
+
+    for path in font_paths:
+        if os.access(path, os.R_OK):
+            print(f"Read permission for {path} is granted.")
+        else:
+            print(f"Read permission for {path} is denied.")
+
+
     if platform.system() == 'Windows':
         # Rutas para Windows
         font_path = "C:/Windows/Fonts/DejaVuSans-Negrita.ttf"
