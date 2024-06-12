@@ -104,7 +104,7 @@ def generar_imagenes_cobranzas(df):
     
     if platform.system() == 'Windows':
         # Rutas para Windows
-        font_path = "C:/Windows/Fonts/DejaVuSans-Bold.ttf"
+        font_path = "C:/Windows/Fonts/DejaVuSans-Negrita.ttf"
         font_path_numero = "C:/Windows/Fonts/DejaVuSans.ttf"
     else:
         # Rutas para Linux
