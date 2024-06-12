@@ -113,7 +113,7 @@ def generar_imagenes_cobranzas(df):
 
     # font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     # font_path_numero = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-
+    print("fooooooooooooooooooooooooooont"....+str(font_path))
     font = ImageFont.truetype(font_path, 20)
     font_carta=ImageFont.truetype(font_path_numero, 38)
 
