@@ -26,9 +26,35 @@
         </div>
     </div>
 
-    {% comment %} {% for d in data %}
-        <h4>{{d.DNI}}</h4>
-    {% endfor %} {% endcomment %}
+    <div class="modal fade login-modal" id="modalConfirmarGuardado">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card mb-0 user-card">
+                <div class="modal-body">
+                    <div class="d-flex mb-4">
+                        <div class="flex-grow-1 me-3">
+                            <h4 class="f-w-500 mb-1">Ventana de Confirmación</h4>
+                          </div>
+                          <div class="flex-shrink-0">
+                            <a href="#" class="avtar avtar-s btn-link-danger btn-pc-default" data-bs-dismiss="modal">
+                              <i class="ti ti-x f-20"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <p>Escribe la palabra <strong>confirmo</strong>, para poder Guardar la secuencia de cartas cobranzas</p>
+                   <input type="text" placeholder="confirmo" id="txtConfirmo" class="form-control sm"> 
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary btn-sm" id="btnConfirmo">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+
+
+
 {% endblock content %}
 
 {% block js %}
@@ -36,13 +62,15 @@
     <script>
         function obtenerDatos(){
             
+            
+            
             $.ajax({
                 type: "GET",
                 url: "{% url 'appobtener_deudores' %}",
                 dataType: "json",
                 beforeSend: function() {
                     $("#spinner").prop('hidden',false);
-                    $("#espere").text("Procesando Números Cartas, por favor espere...")
+                    $("#espere").text("Procesando Datos, por favor espere...")
                     $("#espere").prop('hidden',false)
                 },
                 success: function (data) {
@@ -53,22 +81,36 @@
         }
     </script>
     <script>
+
         function guardarNumerosCartas(){
-            $.ajax({
-                type: "POST",
-                url: "{% url 'appguardarnumeros_cartas' %}",
-                dataType: "json",
-                headers: {'X-CSRFToken': '{{ csrf_token }}'},
-                beforeSend: function() {
-                    $("#spinner_numeros_cartas").prop('hidden',false);
-                    $("#espere_numeros_cartas").text("Procesando Números Cartas, por favor espere...")
-                    $("#espere_numeros_cartas").prop('hidden',false)
-                },
-                success: function (data) {
-                    $("#spinner_numeros_cartas").prop('hidden',true);
-                    $("#espere_numeros_cartas").text("Completado!")
-                }
-            });
+            $("#modalConfirmarGuardado").modal("show");   
         }
+
+        $("#btnConfirmo").on("click",function (e) { 
+            e.preventDefault();
+            if ($("#txtConfirmo").val()=='confirmo') {
+                $("#modalConfirmarGuardado").modal("hide");
+                $.ajax({
+                    type: "POST",
+                    url: "{% url 'appguardarnumeros_cartas' %}",
+                    dataType: "json",
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    beforeSend: function() {
+                        $("#spinner_numeros_cartas").prop('hidden',false);
+                        $("#espere_numeros_cartas").text("Procesando Números Cartas, por favor espere...")
+                        $("#espere_numeros_cartas").prop('hidden',false)
+                    },
+                    success: function (data) {
+                        $("#spinner_numeros_cartas").prop('hidden',true);
+                        $("#espere_numeros_cartas").text("Completado!")
+                        
+                    }
+                });
+            }else{
+                alert("Palabra incorrecta");
+            }
+
+        });
+
     </script>
 {% endblock js %}

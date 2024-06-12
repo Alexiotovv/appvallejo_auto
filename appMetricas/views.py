@@ -101,16 +101,8 @@ def generar_imagenes_cobranzas(df):
     if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°'):
         os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°')
 
-        
-    if platform.system() == 'Windows':
-        # Rutas para Windows
-        font_path = os.path.join('fonts', 'DejaVuSans-Bold.ttf')
-        font_path_numero = os.path.join( 'fonts', 'DejaVuSans.ttf')
-    else:
-        # Rutas para Linux
-        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-        font_path_numero = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-
+    font_path = os.path.join('fonts', 'DejaVuSans-Bold.ttf')
+    font_path_numero = os.path.join( 'fonts', 'DejaVuSans.ttf')
     
     font = ImageFont.truetype(font_path, 20)
     font_carta=ImageFont.truetype(font_path_numero, 38)
@@ -119,10 +111,11 @@ def generar_imagenes_cobranzas(df):
 
     cartasenviadas_dict={cartas.dni_alumno:cartas.numero_carta for cartas in cartasenviadas}
 
-    
+    plantilla_cobranza=os.path.join('cobranzas','plantilla_cobranza_2024.jpg')
+
     for index, row in df.iterrows():
         #usamos la imagen
-        imagen = Image.open('cobranzas/plantilla_cobranza_2024.jpg')
+        imagen = Image.open(plantilla_cobranza)
         d = ImageDraw.Draw(imagen)
 
         alumno_papel= f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}"
