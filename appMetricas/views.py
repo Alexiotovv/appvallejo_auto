@@ -101,11 +101,12 @@ def generar_imagenes_cobranzas(df):
     if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°'):
         os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°')
 
-    base_dir = os.path.dirname(__file__)    
+        
     if platform.system() == 'Windows':
         # Rutas para Windows
-        font_path = os.path.join(base_dir, 'fonts', 'DejaVuSans-Bold.ttf')
-        font_path_numero = os.path.join(base_dir, 'fonts', 'DejaVuSans.ttf')
+        font_path = os.path.join('fonts', 'DejaVuSans-Bold.ttf')
+        font_path_numero = os.path.join( 'fonts', 'DejaVuSans.ttf')
+        print("rutaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+font_path)
     else:
         # Rutas para Linux
         font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
