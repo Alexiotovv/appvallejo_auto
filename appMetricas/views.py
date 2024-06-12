@@ -106,7 +106,6 @@ def generar_imagenes_cobranzas(df):
         # Rutas para Windows
         font_path = os.path.join('fonts', 'DejaVuSans-Bold.ttf')
         font_path_numero = os.path.join( 'fonts', 'DejaVuSans.ttf')
-        print("rutaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+font_path)
     else:
         # Rutas para Linux
         font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
