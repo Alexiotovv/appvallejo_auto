@@ -104,8 +104,8 @@ def generar_imagenes_cobranzas(df):
     
     if platform.system() == 'Windows':
         # Rutas para Windows
-        font_path = "C:/Windows/Fonts/Sitka.ttf"
-        font_path_numero = "C:/Windows/Fonts/Arial.ttf"
+        font_path = "C:/Windows/Fonts/Sitka Banner Bold.ttf"
+        font_path_numero = "C:/Windows/Fonts/Sitka Banner Bold.ttf"
     else:
         # Rutas para Linux
         font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
