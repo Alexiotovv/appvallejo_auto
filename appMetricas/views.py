@@ -9,7 +9,7 @@ import pandas as pd
 import os
 from appMain.models import *
 from PIL import Image, ImageDraw, ImageFont
-
+import platform
 
 def index(request):
     return render(request, 'metricas/index.html')
@@ -102,8 +102,17 @@ def generar_imagenes_cobranzas(df):
         os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°')
 
     
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    font_path_numero = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    if platform.system() == 'Windows':
+        # Rutas para Windows
+        font_path = "C:/Windows/Fonts/Sitka.ttf"
+        font_path_numero = "C:/Windows/Fonts/Arial.ttf"
+    else:
+        # Rutas para Linux
+        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        font_path_numero = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+    # font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    # font_path_numero = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
     font = ImageFont.truetype(font_path, 20)
     font_carta=ImageFont.truetype(font_path_numero, 38)
