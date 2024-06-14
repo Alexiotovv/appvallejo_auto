@@ -33,39 +33,25 @@ def obtener_deudores(request):
     data = union_alumnos_pagos()
     ###########este bloque se repite en la otra función es para optimizar
     df = pd.DataFrame(data)
-    
+    print(df)
     # Lista de todos los meses de marzo a diciembre
     todos_los_meses = ['MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
     
     # Filtrar los meses hasta el último mes de vencimiento
     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
-
-    # Función para obtener los meses que debe un alumno
-    def obtener_meses_debe(meses_pagados,montos_pagados):
-        # return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
-        meses_debe = []
-        montos_debe = []
-        for mes in meses_hasta_ultimo_vencimiento:
-            if mes in meses_pagados:
-                idx = meses_pagados.index(mes)
-                monto_pagado = montos_pagados[idx]
-                if monto_pagado < 250:
-                    meses_debe.append(mes)
-                    montos_debe.append(250 - monto_pagado)
-            else:
-                meses_debe.append(mes)
-                montos_debe.append(250)
-        return meses_debe, montos_debe
     
+    # Función para obtener los meses que debe un alumno
+    def obtener_meses_debe(meses_pagados):
+        return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
+
     # Aplicar la función a cada fila
-    # df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe) 
-    df[['MesesDebe', 'MontosDebe']] = df.apply(lambda row: pd.Series(obtener_meses_debe(row['Mes'], row['Monto'])), axis=1)
-
-
-    df = df[df['MesesDebe'].apply(len) > 0] #filtra solamente a los deudores que se quedan los que tienen meses
+    df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
+    
+    df = df[df['MesesDebe'].apply(len) > 0]
 
     ############cierre del bloque que se repite##########333
     
+
     generar_imagenes_cobranzas(df)
 
     df.to_excel('cobranzas/lista_deben.xlsx')
@@ -250,8 +236,8 @@ def union_alumnos_pagos():
                 # 'Grado': pago.get('Grado'),
                 # 'Seccion': pago.get('Seccion'),
                 # 'Concepto': pago.get('Concepto'),
-                'Mes': [p['Mes'] for p in pagos if p['Dni'] == dni],
-                'Monto': [p['Monto'] for p in pagos if p['Dni'] == dni],
+                'Mes': [p['Mes'].upper() for p in pagos if p['Dni'] == dni],
+                #'Monto': [p['Monto'] for p in pagos if p['Dni'] == dni],
                 # 'TipoIngreso': pago.get('TipoIngreso'),
                 # 'ConceptoNumeroMes': pago.get('ConceptoNumeroMes'),
                 # 'FechaVencimiento': pago.get('FechaVencimiento'),
@@ -264,6 +250,7 @@ def union_alumnos_pagos():
             }
 
             resultados.append(combinado)
+        
         print('union local con datos obtenidor terminada.........................')
         return resultados
         
