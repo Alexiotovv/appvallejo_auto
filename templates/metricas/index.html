@@ -12,6 +12,17 @@
                 <div class="spinner-border" role="status">
                 </div>
             </div>
+
+            <div id="archivo_generado">
+                <br>
+                <br>
+                
+                <a href="{% url 'appdescargar_lista_deben' %}" class="btn btn-warning btn-sm">Descargar Lista Excel </a>
+            </div>
+            <br>
+            <div id="cartas_cobranza">
+                <a href="{% url 'appdescargar_cartascobranza' %}"class="btn btn-warning btn-sm">Descargar Cartas Cobranzas.zip</a>
+            </div>
         </div>
         
         <div class="col-md-6">
@@ -61,9 +72,7 @@
     
     <script>
         function obtenerDatos(){
-            
-            
-            
+
             $.ajax({
                 type: "GET",
                 url: "{% url 'appobtener_deudores' %}",
@@ -74,6 +83,7 @@
                     $("#espere").prop('hidden',false)
                 },
                 success: function (data) {
+                    $("#archivo_generado").prop('hidden',false)
                     $("#spinner").prop('hidden',true);
                     $("#espere").text("Completado!")
                 }

@@ -1,5 +1,226 @@
 {% extends "bases/base.html" %}
 
 {% block content %}
-    <h3>Esto es el dashboard</h3>
+    
+    <a href="{% url 'apprefrescar.datos' %}" class="btn btn-primary btn-sm" >Refrescar los Datos</a>
+    <br>
+
+    <div class="row">
+        <div class="col-sm-4">
+          
+            <!-- <label for="">Seleccione Mes</label>
+            <select name="filtro_mes" id="filtro_mes" class="form-select form-select-sm">
+                {% for mes in meses %}
+                    <option value="{{mes.mes}}">{{mes.mes}}</option>
+                {% endfor %}
+            </select>-->
+            <h5>Total Recaudado a la Fecha(Matricula, Sostenimientos)</h5>
+            <div id="chartCantPagosNivel">
+
+            </div> 
+
+        </div>
+        <div class="col-sm-8">
+          <h5>Total Recaudado a la Fecha(Sostenimientos)</h5>
+          <div id="chartCantPagosMes">
+
+          </div> 
+        </div>
+        <div class="col-sm-12">
+          <h5>Relación de Alumnos Pendientes de Pago</h5>
+          <div class="row">
+            <div class="col-sm-2">
+              Seleccione:
+            </div>
+            <div class="col-sm-3">
+              <select name="grado" id="grado" class="form-select form-select-sm">
+                <option value=""></option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <select name="seccion" id="seccion" class="form-select form-select-sm">
+                <option value=""></option>
+              </select>
+            </div>
+            <div class="col-sm-3">
+              <a href="{% url 'appdescargardeudores' %}" class="btn btn-success btn-sm">Descargar</a>
+            </div>
+          </div>
+
+
+        </div>
+        
+    </div>
 {% endblock content %}
+
+{% block js %}
+    
+    <script src="/static/apexcharts/apexcharts.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            cant_pago_nivel();
+            cant_pago_mes();
+        });
+        
+        function cant_pago_nivel(){
+
+            $.ajax({
+                type: "GET",
+                url: "/grafico/cantpagosnivel/",
+                dataType: "json",
+                success: function (data) {
+                  
+                  grafCantPagosNivel(data)
+                }
+            });
+        }
+
+        function cant_pago_mes(){
+
+          $.ajax({
+              type: "GET",
+              url: "/grafico/cantpagosmes/",
+              dataType: "json",
+              success: function (data) {
+                grafCantPagosMes(data)
+              }
+          });
+      }
+        
+        function grafCantPagosNivel(data) { 
+          
+          const series_array = [];
+          const labels_array = [];
+          
+          data.cant_pagos_nivel.forEach(item => {
+            labels_array.push(item.NIVEL); 
+            series_array.push(item.Cantidad)
+          });
+
+            var options = {
+              series: series_array,
+              chart: {
+              width: 380,
+              type: 'pie',
+            },
+            labels: labels_array,
+            responsive: [{
+              breakpoint: 480,
+              options: {
+                chart: {
+                  width: 200
+                },
+                legend: {
+                  position: 'bottom'
+                }
+              }
+            }]
+            };
+
+            var chart = new ApexCharts(document.querySelector("#chartCantPagosNivel"), options);
+            chart.render();
+        }
+        
+        function grafCantPagosMes(data) { 
+          const series_array = [];
+          const labels_array = [];
+          
+          data.cant_pagos_mes.forEach(item => {
+            labels_array.push(item.Mes); 
+            series_array.push(item.Cantidad)
+          });
+
+            var options = {
+              series: [{
+              name: 'Total Recaudado',
+              data: series_array
+            }],
+              chart: {
+              height: 350,
+              type: 'bar',
+            },
+            plotOptions: {
+              bar: {
+                borderRadius: 10,
+                dataLabels: {
+                  position: 'top', // top, center, bottom
+                },
+              }
+            },
+            dataLabels: {
+              enabled: true,
+              formatter: function (val) {
+                return formatNumber(val);
+              },
+              offsetY: -20,
+              style: {
+                fontSize: '12px',
+                colors: ["#304758"]
+              }
+            },
+            
+            xaxis: {
+              categories: labels_array,
+              position: 'bottom',
+              axisBorder: {
+                show: false
+              },
+              axisTicks: {
+                show: false
+              },
+              crosshairs: {
+                fill: {
+                  type: 'gradient',
+                  gradient: {
+                    colorFrom: '#D8E3F0',
+                    colorTo: '#BED1E6',
+                    stops: [0, 100],
+                    opacityFrom: 0.4,
+                    opacityTo: 0.5,
+                  }
+                }
+              },
+              tooltip: {
+                enabled: true,
+              }
+            },
+            yaxis: {
+              axisBorder: {
+                show: false
+              },
+              axisTicks: {
+                show: false,
+              },
+              labels: {
+                show: false,
+                formatter: function (val) {
+                  return "S/ "+formatNumber(val);
+                }
+              }
+            
+            },
+            //title: {
+            //  text: 'Monthly Inflation in Argentina, 2002',
+            //  floating: true,
+            //  offsetY: 330,
+            //  align: 'center',
+            //  style: {
+            //    color: '#444'
+            //  }
+            //}
+            };
+    
+            var chart = new ApexCharts(document.querySelector("#chartCantPagosMes"), options);
+            chart.render();
+        };
+
+        function formatNumber(num) {
+          return num
+              .toFixed(2) // Asegura dos decimales
+              .replace(/\d(?=(\d{3})+\.)/g, '$&,'); // Añade comas como separadores de miles
+        }
+
+
+    </script>
+{% endblock js %}

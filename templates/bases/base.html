@@ -18,6 +18,7 @@
 
     <!-- [Favicon] icon -->
     <link rel="icon" href="/static/assets/images/favicon.svg" type="image/x-icon" />
+    <script src="../static/assets/js/jquery-3.7.1.min.js"></script>
  <!-- [Google Font : Public Sans] icon -->
 <link href="/static/fonts.googleapis.com/css23da6.css?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 
@@ -82,6 +83,9 @@
               <span class="pc-arrow"><i data-feather="chevron-right"></i></span>
               {% comment %} <span class="pc-badge">2</span> {% endcomment %}
             </a>
+            <ul class="pc-submenu">
+              <li class="pc-item"><a class="pc-link" href="{% url 'home' %}">Inicio</a></li> 
+            </ul>
             <ul class="pc-submenu">
               <li class="pc-item"><a class="pc-link" href="{% url 'appmetricas' %}">Métricas</a></li> 
             </ul>
@@ -855,7 +859,7 @@
 <!-- Mirrored from html.phoenixcoded.net/light-able/bootstrap/widget/w_data.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 07 May 2024 15:07:45 GMT -->
 
 
-<script src="/static/assets/js/jquery-3.7.1.min.js"></script>
+
 
 {% block js %}
   

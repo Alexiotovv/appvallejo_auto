@@ -1,7 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.db import connections
 from django.db.utils import ConnectionDoesNotExist
-from django.http import JsonResponse
+from django.http import JsonResponse,HttpResponse
 import MySQLdb
 import requests
 from datetime import datetime as dt
@@ -11,9 +11,21 @@ from appMain.models import *
 from PIL import Image, ImageDraw, ImageFont
 import platform
 from django.conf import settings
+import shutil
 
 def index(request):
     return render(request, 'metricas/index.html')
+
+def descargar_lista_deben(request):
+    nombre_archivo = 'lista_deben.xlsx'
+    ruta_archivo = os.path.join(settings.MEDIA_ROOT, nombre_archivo)
+    # Validar que el archivo exista antes de descargar
+    if os.path.exists(ruta_archivo):
+        # Devolver una respuesta de redirección para descargar el archivo
+        return redirect(settings.MEDIA_URL + nombre_archivo)
+    else:
+        # Manejar el caso donde el archivo no existe
+        return HttpResponse("El archivo no existe")
 
 def obtener_deudores(request):        
 
@@ -33,7 +45,7 @@ def obtener_deudores(request):
     data = union_alumnos_pagos()
     ###########este bloque se repite en la otra función es para optimizar
     df = pd.DataFrame(data)
-    print(df)
+    
     # Lista de todos los meses de marzo a diciembre
     todos_los_meses = ['MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
     
@@ -51,42 +63,43 @@ def obtener_deudores(request):
 
     ############cierre del bloque que se repite##########333
     
-
+    borrar_carpetas_media()
     generar_imagenes_cobranzas(df)
 
-    df.to_excel('cobranzas/lista_deben.xlsx')
-
+    df.to_excel('media/lista_deben.xlsx')
+    
     resultado={'data':'success','message':'ok'}
     return JsonResponse(resultado,safe=False)
+
 
 
 def generar_imagenes_cobranzas(df):
 
     fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
     
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/1°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/1°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/2°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/2°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/3°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/3°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/4°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/4°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/5°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/5°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/6°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/6°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/1°'):
+        os.makedirs('media/'+str(fecha_actual)+'/PRIMARIA/1°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/2°'):
+        os.makedirs('media/'+str(fecha_actual)+'/PRIMARIA/2°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/3°'):
+        os.makedirs('media/'+str(fecha_actual)+'/PRIMARIA/3°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/4°'):
+        os.makedirs('media/'+str(fecha_actual)+'/PRIMARIA/4°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/5°'):
+        os.makedirs('media/'+str(fecha_actual)+'/PRIMARIA/5°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/6°'):
+        os.makedirs('media/'+str(fecha_actual)+'/PRIMARIA/6°')
     
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/1°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/1°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/2°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/2°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/3°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/3°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/4°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/4°')
-    if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°'):
-        os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/5°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/SECUNDARIA/1°'):
+        os.makedirs('media/'+str(fecha_actual)+'/SECUNDARIA/1°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/SECUNDARIA/2°'):
+        os.makedirs('media/'+str(fecha_actual)+'/SECUNDARIA/2°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/SECUNDARIA/3°'):
+        os.makedirs('media/'+str(fecha_actual)+'/SECUNDARIA/3°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/SECUNDARIA/4°'):
+        os.makedirs('media/'+str(fecha_actual)+'/SECUNDARIA/4°')
+    if not os.path.exists('media/'+str(fecha_actual)+'/SECUNDARIA/5°'):
+        os.makedirs('media/'+str(fecha_actual)+'/SECUNDARIA/5°')
 
     font_path = os.path.join('fonts', 'DejaVuSans-Bold.ttf')
     font_path_numero = os.path.join( 'fonts', 'DejaVuSans.ttf')
@@ -168,16 +181,16 @@ def generar_imagenes_cobranzas(df):
         seccion=row['Seccion']
         
         if row['Grado'][1:5]=='PRIM':
-            if not os.path.exists('cobranzas/'+str(fecha_actual)+'/PRIMARIA/'+grado+'/'+seccion):
-                os.makedirs('cobranzas/'+str(fecha_actual)+'/PRIMARIA/'+grado+'/'+seccion)
+            if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/'+grado+'/'+seccion):
+                os.makedirs('media/'+str(fecha_actual)+'/PRIMARIA/'+grado+'/'+seccion)
 
-            image_path = f"cobranzas/{fecha_actual}/PRIMARIA/{grado}/{seccion}/{row['DNI']}_{nombre_alumno}.jpg"
+            image_path = f"media/{fecha_actual}/PRIMARIA/{grado}/{seccion}/{row['DNI']}_{nombre_alumno}.jpg"
 
         elif row['Grado'][1:4]=='SEC':
-            if not os.path.exists('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/'+grado+'/'+seccion):
-                os.makedirs('cobranzas/'+str(fecha_actual)+'/SECUNDARIA/'+grado+'/'+seccion)
+            if not os.path.exists('media/'+str(fecha_actual)+'/SECUNDARIA/'+grado+'/'+seccion):
+                os.makedirs('media/'+str(fecha_actual)+'/SECUNDARIA/'+grado+'/'+seccion)
 
-            image_path = f"cobranzas/{fecha_actual}/SECUNDARIA/{grado}/{seccion}/{row['DNI']}_{nombre_alumno}.jpg"
+            image_path = f"media/{fecha_actual}/SECUNDARIA/{grado}/{seccion}/{row['DNI']}_{nombre_alumno}.jpg"
 
         imagen.save(image_path)
         
@@ -204,12 +217,13 @@ def union_alumnos_pagos():
         # #consumiendo la api del sistema de notas
         url = "https://colcoopcv.com/listar/matriculados/2024"
         alumnos = obtener_datos_de_api(url)
+        
         print('datos obtenidos del sistema de notas.......................')
         if alumnos is None:
             return JsonResponse({"error": "No se pudieron obtener los datos de la API."}, status=500)
 
         
-        apoderados_dict={str(apo['Dni']).strip(): apo for apo in apoderados}
+        apoderados_dict={str(apo['Dni']).strip():apo for apo in apoderados}
         direcciones_dic={str(dire['Dni']).strip():dire for dire in direcciones}
 
         for alumno in alumnos:
@@ -279,7 +293,6 @@ def obtener_datos_de_api(url):
     return None        
 
 
-
 def guardar_numeros_cartas(request):
     
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
@@ -317,3 +330,62 @@ def guardar_numeros_cartas(request):
     
     resultado={'data':'success','message':'ok'}
     return JsonResponse(resultado,safe=False)
+
+
+
+from django.views.generic import View
+import zipfile
+def borrar_carpetas_media():
+    # Obtener la ruta de la carpeta media desde settings.py
+    media_root = settings.MEDIA_ROOT
+    
+    # Verificar que la ruta de la carpeta media esté configurada y exista
+    if os.path.exists(media_root):
+        # Recorrer todos los archivos y carpetas dentro de media
+        for root, dirs, files in os.walk(media_root, topdown=False):
+            for file_name in files:
+                file_path = os.path.join(root, file_name)
+                if not (file_name.endswith('.jpeg') or file_name.endswith('.xlsx')):
+                    os.remove(file_path)  # Eliminar archivo si no es .jpeg ni .xlsx
+            for dir_name in dirs:
+                dir_path = os.path.join(root, dir_name)
+                shutil.rmtree(dir_path)  # Eliminar carpeta y su contenido de manera recursiva
+    else:
+        print(f"La carpeta {media_root} no existe o no está configurada en settings.py.")
+
+
+class DescargarCarpetasView(View):
+    def get(self, request):
+        # Ruta de la carpeta media
+        media_root = settings.MEDIA_ROOT
+        
+        # Nombre del archivo ZIP que se va a descargar
+        zip_filename = 'cartas_cobranza.zip'
+        
+        # Ruta completa del archivo ZIP
+        zip_filepath = os.path.join(media_root, zip_filename)
+        
+        # Crear un archivo ZIP temporal para almacenar los archivos
+        with zipfile.ZipFile(zip_filepath, 'w') as zip_file:
+            # Recorrer las carpetas dentro de MEDIA_ROOT
+            for dirpath, _, filenames in os.walk(media_root):
+                # Ignorar la carpeta media raíz
+                if dirpath != media_root:
+                    # Agregar todos los archivos de la carpeta al ZIP
+                    for filename in filenames:
+                        file_path = os.path.join(dirpath, filename)
+                        zip_file.write(file_path, os.path.relpath(file_path, media_root))
+        
+        # Preparar la respuesta HTTP para descargar el archivo ZIP
+        response = HttpResponse(content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename={zip_filename}'
+        
+        # Leer el contenido del archivo ZIP y agregarlo a la respuesta
+        with open(zip_filepath, 'rb') as zip_content:
+            response.write(zip_content.read())
+        
+        # Eliminar el archivo ZIP temporal después de descargarlo
+        os.remove(zip_filepath)
+        
+        return response
+    
