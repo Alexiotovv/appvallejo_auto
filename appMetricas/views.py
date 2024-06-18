@@ -71,8 +71,6 @@ def obtener_deudores(request):
     resultado={'data':'success','message':'ok'}
     return JsonResponse(resultado,safe=False)
 
-
-
 def generar_imagenes_cobranzas(df):
 
     fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
@@ -194,7 +192,6 @@ def generar_imagenes_cobranzas(df):
 
         imagen.save(image_path)
         
-
 def union_alumnos_pagos():
     resultados = []
     try:

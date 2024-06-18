@@ -30,9 +30,9 @@
           <h5>Relación de Alumnos Pendientes de Pago</h5>
           <div class="row">
             <div class="col-sm-2">
-              Seleccione:
+              Haga click para descargar
             </div>
-            <div class="col-sm-3">
+            {% comment %} <div class="col-sm-3">
               <select name="grado" id="grado" class="form-select form-select-sm">
                 <option value=""></option>
               </select>
@@ -41,7 +41,7 @@
               <select name="seccion" id="seccion" class="form-select form-select-sm">
                 <option value=""></option>
               </select>
-            </div>
+            </div> {% endcomment %}
             <div class="col-sm-3">
               <a href="{% url 'appdescargardeudores' %}" class="btn btn-success btn-sm">Descargar</a>
             </div>
