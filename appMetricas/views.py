@@ -53,14 +53,35 @@ def obtener_deudores(request):
     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
     
     # Función para obtener los meses que debe un alumno
-    def obtener_meses_debe(meses_pagados):
-        return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
+    # def obtener_meses_debe(meses_pagados):
+    #     return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
+    
+    def obtener_meses_debe(meses_pagados, montos_pagados, descripcion):
+        meses_debe = []
+        deuda_total = 0
+        for mes in meses_hasta_ultimo_vencimiento:
+            total_monto_pagado = 0
+            for i, mes_pagado in enumerate(meses_pagados):
+                if mes_pagado == mes:
+                    if montos_pagados[i] >= 250 or 'BECA' in descripcion[i]:
+                        total_monto_pagado = 250  # Esto asegura que el mes se considere pagado
+                        break
+                    elif 'CUENTA' in descripcion[i] or montos_pagados[i] < 250:
+                        total_monto_pagado += montos_pagados[i]
+
+            if total_monto_pagado < 250:
+                meses_debe.append(mes)
+                deuda_total += 250 - total_monto_pagado
+
+        meses_debe.append(f'S/ {deuda_total}')
+        return meses_debe
+        
 
     # Aplicar la función a cada fila
-    df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
+    # df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
+    df['MesesDebe'] = df.apply(lambda row: obtener_meses_debe(row['Mes'], row['Monto'], row['Descripcion']), axis=1)
     
-    df = df[df['MesesDebe'].apply(len) > 0]
-
+    df = df[df['MesesDebe'].apply(len) > 1]
     ############cierre del bloque que se repite##########333
     
     borrar_carpetas_media()
@@ -128,10 +149,11 @@ def generar_imagenes_cobranzas(df):
         # print(str(row['MontosDebe']))
         # print(str(row['MesesDebe']))
         # montos_debe_papel= f"{', '.join(str(row['MontosDebe']))}"
-        cantidad_meses=meses_debe_papel.split(",")
-        cantidad_meses=len(cantidad_meses)
         
-        total_deuda=cantidad_meses*250
+        # cantidad_meses=meses_debe_papel.split(",")
+        # cantidad_meses=len(cantidad_meses)
+        # total_deuda=cantidad_meses*250
+
         direccion=f"{row['Direccion']}"
         
         padres_papel= f"{row['Apoderado']}"
@@ -170,7 +192,7 @@ def generar_imagenes_cobranzas(df):
         d.text((290,475), alumno_papel, font=font, fill=(0, 0, 0))
         d.text((430,528), grado_papel,font=font, fill=(0, 0, 0))
         d.text((520,528), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
-        d.text((330,635), meses_debe_papel+"  S/ "+ str(total_deuda)+".00  ",font=font, fill=(0, 0, 0))
+        d.text((330,635), meses_debe_papel,font=font, fill=(0, 0, 0))
         d.text((800,1225), fecha_actual_largo,font=font, fill=(0, 0, 0))
         d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
 
@@ -248,7 +270,8 @@ def union_alumnos_pagos():
                 # 'Seccion': pago.get('Seccion'),
                 # 'Concepto': pago.get('Concepto'),
                 'Mes': [p['Mes'].upper() for p in pagos if p['Dni'] == dni],
-                #'Monto': [p['Monto'] for p in pagos if p['Dni'] == dni],
+                'Monto': [p['Monto'] for p in pagos if p['Dni'] == dni],
+                'Descripcion': [p['descripcion'] for p in pagos if p['Dni'] == dni],
                 # 'TipoIngreso': pago.get('TipoIngreso'),
                 # 'ConceptoNumeroMes': pago.get('ConceptoNumeroMes'),
                 # 'FechaVencimiento': pago.get('FechaVencimiento'),
