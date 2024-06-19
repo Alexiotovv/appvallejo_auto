@@ -76,10 +76,20 @@ def refrescar_datos(request):
 
     return redirect('home')
 
+def convertir_decimals(lista):
+    # Convertir cada Decimal en float y luego en str
+    return [str(float(x)) for x in lista]
+
 def descargar_deudores(request):
     data=generar_pagos()
     df=generar_deudores(data)
+    df['Monto'] = df['Monto'].apply(convertir_decimals)
+    df['Mes'] = df['Mes'].apply(lambda x: ', '.join(x))
+    df['Monto'] = df['Monto'].apply(lambda x: ', '.join(x))
+    df['MesesDebe'] = df['MesesDebe'].apply(lambda x: ', '.join(x))
     df = df.rename(columns={'Mes': 'MesesPagados'})
+    df = df.rename(columns={'Monto': 'MontoPagados'})
+
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename=alumnos.xlsx'
 
@@ -103,10 +113,27 @@ def generar_deudores(data):
     
     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
     
-    def obtener_meses_debe(meses_pagados):
-        return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
+    def obtener_meses_debe(meses_pagados, montos_pagados, descripcion):
+        meses_debe = []
+        deuda_total = 0
+        for mes in meses_hasta_ultimo_vencimiento:
+            total_monto_pagado = 0
+            for i, mes_pagado in enumerate(meses_pagados):
+                if mes_pagado == mes:
+                    if montos_pagados[i] >= 250 or 'BECA' in descripcion[i]:
+                        total_monto_pagado = 250  # Esto asegura que el mes se considere pagado
+                        break
+                    elif 'CUENTA' in descripcion[i] or montos_pagados[i] < 250:
+                        total_monto_pagado += montos_pagados[i]
 
-    df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
+            if total_monto_pagado < 250:
+                meses_debe.append(mes)
+                deuda_total += 250 - total_monto_pagado
+
+        meses_debe.append(f'S/Total: {deuda_total}')
+        return meses_debe
+
+    df['MesesDebe'] = df.apply(lambda row: obtener_meses_debe(row['Mes'], row['Monto'], row['Descripcion']), axis=1)
     
     df = df[df['MesesDebe'].apply(len) > 0]
 
@@ -147,7 +174,8 @@ def generar_pagos():
             'Mes': [(p.Mes).upper() for p in pagos if p.Dni == dni],
             'Apoderado': apoderados.get('Apoderado'),
             'Direccion': direcciones.get('Direccion'),
-
+            'Monto': [p.Monto for p in pagos if p.Dni == dni],
+            'Descripcion': [p.descripcion for p in pagos if p.Dni == dni],
         }
         resultados.append(combinado)
     cursor1.close()
