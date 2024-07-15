@@ -27,7 +27,7 @@ def descargar_lista_deben(request):
         # Manejar el caso donde el archivo no existe
         return HttpResponse("El archivo no existe")
 
-def obtener_deudores(request):        
+def obtener_deudores(request, plantilla):        
 
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
     #meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
@@ -85,14 +85,15 @@ def obtener_deudores(request):
     ############cierre del bloque que se repite##########333
     
     borrar_carpetas_media()
-    generar_imagenes_cobranzas(df)
+    generar_imagenes_cobranzas(df,plantilla)
 
     df.to_excel('media/lista_deben.xlsx')
     
     resultado={'data':'success','message':'ok'}
     return JsonResponse(resultado,safe=False)
 
-def generar_imagenes_cobranzas(df):
+
+def generar_imagenes_cobranzas(df,plantilla):
 
     fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
     
@@ -130,7 +131,12 @@ def generar_imagenes_cobranzas(df):
 
     cartasenviadas_dict={cartas.dni_alumno:cartas.numero_carta for cartas in cartasenviadas}
     
-    plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_cobranza_2024.jpeg')
+    if plantilla=='general':
+        plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_cobranza_2024.jpeg')
+    
+    elif plantilla=='invitacion':
+        plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_invitacion_salir_2024.jpeg')
+
 
     for index, row in df.iterrows():
         #usamos la imagen
@@ -145,14 +151,6 @@ def generar_imagenes_cobranzas(df):
         grado_papel=f"{row['Grado']}"
         seccion_papel =f"{row['Seccion']}"
         meses_debe_papel= f"{', '.join(row['MesesDebe'])}"
-        # print(dni_alumno)
-        # print(str(row['MontosDebe']))
-        # print(str(row['MesesDebe']))
-        # montos_debe_papel= f"{', '.join(str(row['MontosDebe']))}"
-        
-        # cantidad_meses=meses_debe_papel.split(",")
-        # cantidad_meses=len(cantidad_meses)
-        # total_deuda=cantidad_meses*250
 
         direccion=f"{row['Direccion']}"
         
@@ -187,14 +185,40 @@ def generar_imagenes_cobranzas(df):
         anhio_papel=dt.now().year
         fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
 
-        d.text((900,298), "N° "+ str(int(numero_carta_obtenida+1)), font=font_carta, fill=(0, 0, 0))
-        d.text((230,425), padres_cadena_corregida, font=font, fill=(0, 0, 0))
-        d.text((290,475), alumno_papel, font=font, fill=(0, 0, 0))
-        d.text((430,528), grado_papel,font=font, fill=(0, 0, 0))
-        d.text((520,528), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
-        d.text((330,635), meses_debe_papel,font=font, fill=(0, 0, 0))
-        d.text((800,1225), fecha_actual_largo,font=font, fill=(0, 0, 0))
-        d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
+        if plantilla=='general':
+            d.text((900,298), "N° "+ str(int(numero_carta_obtenida+1)), font=font_carta, fill=(0, 0, 0))
+            d.text((230,425), padres_cadena_corregida, font=font, fill=(0, 0, 0))
+            d.text((290,475), alumno_papel, font=font, fill=(0, 0, 0))
+            d.text((430,528), grado_papel,font=font, fill=(0, 0, 0))
+            d.text((520,528), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
+            d.text((330,635), meses_debe_papel,font=font, fill=(0, 0, 0))
+            d.text((800,1225), fecha_actual_largo,font=font, fill=(0, 0, 0))
+            d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
+        elif plantilla=='invitacion':
+            
+            if 'PRIM' in grado_papel:
+                nivel='PRIMARIA'
+                img=os.path.join(settings.MEDIA_ROOT, 'firma_prim.jpeg')
+                firma = Image.open(img)
+            elif 'SEC' in grado_papel:
+                nivel='SECUNDARIA'
+                img=os.path.join(settings.MEDIA_ROOT, 'firma_sec.jpeg')
+                firma = Image.open(img)
+            
+            imagen.paste(firma, (440, 890))
+
+            indice_s = meses_debe_papel.rfind("S/")
+            if indice_s != -1:
+                monto_str = meses_debe_papel[indice_s+2:].strip()
+            
+            d.text((190,325), padres_cadena_corregida, font=font, fill=(0, 0, 0))
+            d.text((190,395), alumno_papel, font=font, fill=(0, 0, 0))
+            d.text((280,438), str(grado_papel[0])+str("°"),font=font, fill=(0, 0, 0))
+            d.text((370,438), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
+            d.text((480,438), nivel,font=font, fill=(0, 0, 0))
+            d.text((500,505), monto_str,font=font, fill=(0, 0, 0))
+            d.text((570,795), str(dia_papel),font=font, fill=(0, 0, 0))
+            #d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
 
         nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
         grado=row['Grado'][:1]+"°"
