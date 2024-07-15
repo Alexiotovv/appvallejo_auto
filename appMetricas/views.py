@@ -140,13 +140,14 @@ def generar_imagenes_cobranzas(df,plantilla):
 
 
     for index, row in df.iterrows():
-        cantidad_meses_debe=len(row['MesesDebe'])
+        cantidad_meses_debe=int(len(row['MesesDebe']))
         
         if plantilla=='invitacion':
             if cantidad_meses_debe >= 4:
                 pass
+                #print(str(row['MesesDebe']))
             else:
-                break
+                continue
         elif plantilla=='general': 
             pass
         
