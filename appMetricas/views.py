@@ -139,9 +139,10 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
         plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_invitacion_salir_2024.jpeg')
 
     
-    cantidad_meses_recibido=int(meses)+1
+    cantidad_meses_recibido=int(meses)
+    
     for index, row in df.iterrows():
-        cantidad_meses_debe=int(len(row['MesesDebe']))
+        cantidad_meses_debe=int(len(row['MesesDebe'])-1)
         
         if plantilla=='invitacion':
             if cantidad_meses_debe >= cantidad_meses_recibido:
