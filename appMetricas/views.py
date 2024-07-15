@@ -27,8 +27,8 @@ def descargar_lista_deben(request):
         # Manejar el caso donde el archivo no existe
         return HttpResponse("El archivo no existe")
 
-def obtener_deudores(request, plantilla):        
-
+def obtener_deudores(request, plantilla,meses):
+    
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
     #meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
     
@@ -85,7 +85,7 @@ def obtener_deudores(request, plantilla):
     ############cierre del bloque que se repite##########333
     
     borrar_carpetas_media()
-    generar_imagenes_cobranzas(df,plantilla)
+    generar_imagenes_cobranzas(df,plantilla,meses)
 
     df.to_excel('media/lista_deben.xlsx')
     
@@ -93,7 +93,7 @@ def obtener_deudores(request, plantilla):
     return JsonResponse(resultado,safe=False)
 
 
-def generar_imagenes_cobranzas(df,plantilla):
+def generar_imagenes_cobranzas(df,plantilla,meses):
 
     fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
     
@@ -138,12 +138,13 @@ def generar_imagenes_cobranzas(df,plantilla):
     elif plantilla=='invitacion':
         plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_invitacion_salir_2024.jpeg')
 
-
+    
+    cantidad_meses_recibido=int(meses)+1
     for index, row in df.iterrows():
         cantidad_meses_debe=int(len(row['MesesDebe']))
         
         if plantilla=='invitacion':
-            if cantidad_meses_debe >= 4:
+            if cantidad_meses_debe >= cantidad_meses_recibido:
                 pass
                 #print(str(row['MesesDebe']))
             else:

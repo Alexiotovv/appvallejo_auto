@@ -25,7 +25,28 @@
             </div>
             <br>
             <br>
-            <button class="btn btn-primary btn-sm" onclick="obtenerDatos('invitacion')">Procesar Cartas Invitación Salir</button>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="">Generar Cartas Invitación</label>
+                    <button class="btn btn-primary btn-sm" onclick="obtenerDatos('invitacion')">Procesar Cartas Invitación Salir</button>
+                </div>
+                <div class="col-md-6">
+                    Meses Deuda
+                    <select name="meses" id="meses" class="form-select form-select-sm">
+                        <option value=1>mayor igual a 1 mes</option>
+                        <option value=2>mayor igual a 2 meses</option>
+                        <option value=3>mayor igual a 3 meses</option>
+                        <option value=4>mayor igual a 4 meses</option>
+                        <option value=5>mayor igual a 5 meses</option>
+                        <option value=6>mayor igual a 6 meses</option>
+                        <option value=7>mayor igual a 7 meses</option>
+                        <option value=8>mayor igual a 8 meses</option>
+                        <option value=9>mayor igual a 9 meses</option>
+                        <option value=10>mayor igual a 10 meses</option>
+                    </select>
+                </div>
+            </div>
             <div id="cartas_cobranza">
                 <br>
                 <a href="{% url 'appdescargar_cartascobranza' %}" class="btn btn-warning btn-sm">Descargar Cartas Invitación Salir.zip</a>
@@ -81,10 +102,11 @@
     
     <script>
         function obtenerDatos(plantilla){
+            meses=$("#meses").val();
 
             $.ajax({
                 type: "GET",
-                url: "/deudores/obtener/"+plantilla,
+                url: "/deudores/obtener/"+plantilla+"/"+meses,
                 dataType: "json",
                 beforeSend: function() {
                     $("#spinner").prop('hidden',false);
