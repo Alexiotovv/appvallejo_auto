@@ -227,7 +227,7 @@ def generar_imagenes_cobranzas(df,plantilla):
             d.text((280,438), str(grado_papel[0])+str("°"),font=font, fill=(0, 0, 0))
             d.text((370,438), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
             d.text((480,438), nivel,font=font, fill=(0, 0, 0))
-            d.text((485,510), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
+            d.text((485,510), meses_debe_papel+str(".00"),font=font_meses_debe, fill=(0, 0, 0))
             d.text((570,795), str(dia_papel),font=font, fill=(0, 0, 0))
             #d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
 
