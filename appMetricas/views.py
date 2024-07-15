@@ -165,7 +165,7 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
         grado_papel=f"{row['Grado']}"
         seccion_papel =f"{row['Seccion']}"
         meses_debe_papel= f"{', '.join(row['MesesDebe'])}"
-
+        meses_debe_papel=meses_debe_papel.replace(',', '-')
         direccion=f"{row['Direccion']}"
         
         padres_papel= f"{row['Apoderado']}"
