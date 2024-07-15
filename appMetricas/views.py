@@ -125,6 +125,7 @@ def generar_imagenes_cobranzas(df,plantilla):
     font_path_numero = os.path.join( 'fonts', 'DejaVuSans.ttf')
     
     font = ImageFont.truetype(font_path, 20)
+    font_meses_debe = ImageFont.truetype(font_path, 10)
     font_carta=ImageFont.truetype(font_path_numero, 38)
 
     cartasenviadas=CartasEnviadas.objects.all()
@@ -139,6 +140,16 @@ def generar_imagenes_cobranzas(df,plantilla):
 
 
     for index, row in df.iterrows():
+        cantidad_meses_debe=len(row['MesesDebe'])
+        
+        if plantilla=='invitacion':
+            if cantidad_meses_debe >= 4:
+                pass
+            else:
+                break
+        elif plantilla=='general': 
+            pass
+        
         #usamos la imagen
         imagen = Image.open(plantilla_cobranza)
         d = ImageDraw.Draw(imagen)
@@ -207,16 +218,16 @@ def generar_imagenes_cobranzas(df,plantilla):
             
             imagen.paste(firma, (440, 890))
 
-            indice_s = meses_debe_papel.rfind("S/")
-            if indice_s != -1:
-                monto_str = meses_debe_papel[indice_s+2:].strip()
+            # indice_s = meses_debe_papel.rfind("S/")
+            # if indice_s != -1:
+            #     monto_str = meses_debe_papel[indice_s+2:].strip()
             
             d.text((190,325), padres_cadena_corregida, font=font, fill=(0, 0, 0))
             d.text((190,395), alumno_papel, font=font, fill=(0, 0, 0))
             d.text((280,438), str(grado_papel[0])+str("°"),font=font, fill=(0, 0, 0))
             d.text((370,438), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
             d.text((480,438), nivel,font=font, fill=(0, 0, 0))
-            d.text((500,505), monto_str,font=font, fill=(0, 0, 0))
+            d.text((485,510), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
             d.text((570,795), str(dia_papel),font=font, fill=(0, 0, 0))
             #d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
 
