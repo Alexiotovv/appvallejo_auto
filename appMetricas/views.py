@@ -94,7 +94,7 @@ def obtener_deudores(request, plantilla,meses):
 
 
 def generar_imagenes_cobranzas(df,plantilla,meses):
-
+    
     fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
     
     if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/1°'):
@@ -314,7 +314,8 @@ def union_alumnos_pagos():
                 # 'ConceptoNumeroMes': pago.get('ConceptoNumeroMes'),
                 # 'FechaVencimiento': pago.get('FechaVencimiento'),
                 # 'LetraMesPago': pago.get('LetraMesPago'),
-                # 'Atrasado': pago.get('Atrasado'),
+                #'Atrasado': pago.get('Atrasado'),
+                'Atrasado':[p['Atrasado'] for p in pagos if p['Dni'] == dni],
                 # 'DiasAtraso': pago.get('DiasAtraso'),
                 # 'MesesAtraso': pago.get('MesesAtraso'),
                 'Apoderado': apoderados.get('Apoderado'),
@@ -447,3 +448,177 @@ class DescargarCarpetasView(View):
         
         return response
     
+class DescargarCarpetasAgradecimientoView(View):
+    def get(self, request):
+        # Ruta de la carpeta media
+        media_root = settings.MEDIA_ROOT
+
+        # Nombre de la carpeta que se va a descargar
+        carpeta_nombre = 'AGRADECIMIENTO'
+        carpeta_ruta = os.path.join(media_root, carpeta_nombre)
+        
+        if not os.path.exists(carpeta_ruta):
+            return HttpResponse(f"La carpeta '{carpeta_nombre}' no existe.", status=404)
+        
+        # Nombre del archivo ZIP que se va a descargar
+        zip_filename = f'{carpeta_nombre}.zip'
+        
+        # Ruta completa del archivo ZIP
+        zip_filepath = os.path.join(media_root, zip_filename)
+        
+        # Crear un archivo ZIP temporal para almacenar los archivos
+        with zipfile.ZipFile(zip_filepath, 'w') as zip_file:
+            # Recorrer la carpeta específica dentro de MEDIA_ROOT
+            for dirpath, _, filenames in os.walk(carpeta_ruta):
+                for filename in filenames:
+                    file_path = os.path.join(dirpath, filename)
+                    zip_file.write(file_path, os.path.relpath(file_path, media_root))
+        
+        # Preparar la respuesta HTTP para descargar el archivo ZIP
+        response = HttpResponse(content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename={zip_filename}'
+        
+        # Leer el contenido del archivo ZIP y agregarlo a la respuesta
+        with open(zip_filepath, 'rb') as zip_content:
+            response.write(zip_content.read())
+        
+        # Eliminar el archivo ZIP temporal después de descargarlo
+        os.remove(zip_filepath)
+        
+        return response
+
+def obtener_puntuales(request,plantilla):
+    puntuales = union_alumnos_pagos()
+    
+    # Limpiar los datos
+    for item in puntuales:
+        # Eliminar el primer "SI" o "NO" en 'Atrasado' si existe
+        if 'Atrasado' in item and item['Atrasado']:
+            item['Atrasado'].pop(0)
+        
+        # Eliminar todas las ocurrencias de 'MATRICULA' en 'Mes'
+        if 'Mes' in item:
+            while 'MATRICULA' in item['Mes']:
+                item['Mes'].remove('MATRICULA')
+
+    # Filtrar solo los que tienen "NO" en todos los subelementos de 'Atrasado' y que no estén vacíos
+    puntuales_filtrados = [
+        item for item in puntuales if item.get('Atrasado') and all(atrasado == 'NO' for atrasado in item['Atrasado'])
+    ]
+
+    # Crear un nuevo array con solo los campos deseados
+    puntuales_resultado = [
+        {
+            'DNI': item['DNI'],
+            'Nombres': item['Nombres'],
+            'ApellidoPaterno': item['ApellidoPaterno'],
+            'ApellidoMaterno': item['ApellidoMaterno'],
+            'Atrasado': item['Atrasado'],
+            'Mes': item['Mes'],
+            'Apoderado': item['Apoderado'],
+            'Direccion': item['Direccion'],
+            'Grado': item['Grado'],
+            'Seccion': item['Seccion']
+        }
+        for item in puntuales_filtrados
+    ]
+    
+    generar_imagenes_puntuales(puntuales_resultado,plantilla)
+
+    return JsonResponse({'resultado':'completado'}, safe=False)
+
+def generar_imagenes_puntuales(puntuales_resultado,plantilla):
+    borrar_carpetas_media()
+    fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
+    
+    if not os.path.exists('media/'+'AGRADECIMIENTO/'+str(fecha_actual)+'/PRIMARIA'):
+        os.makedirs('media/'+'AGRADECIMIENTO/'+str(fecha_actual)+'/PRIMARIA')
+    if not os.path.exists('media/'+'AGRADECIMIENTO/'+str(fecha_actual)+'/SECUNDARIA'):
+        os.makedirs('media/'+'AGRADECIMIENTO/'+str(fecha_actual)+'/SECUNDARIA')
+    
+    font_path = os.path.join('fonts', 'DejaVuSans-Bold.ttf')
+    font_path_numero = os.path.join( 'fonts', 'DejaVuSans.ttf')
+    
+    font = ImageFont.truetype(font_path, 20)
+    font_carta=ImageFont.truetype(font_path_numero, 38)
+
+    
+    if plantilla=='agradecimiento':
+        plantilla_felicitacion=os.path.join(settings.MEDIA_ROOT, 'plantilla_felicitacion.jpeg')
+    
+    df_puntuales = pd.DataFrame(puntuales_resultado)
+
+    for index, row in df_puntuales.iterrows():
+        
+        imagen = Image.open(plantilla_felicitacion)
+        d = ImageDraw.Draw(imagen)
+
+        alumno_papel= f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}"
+        #dni_alumno= f"{row['DNI']}"
+        grado_papel=f"{row['Grado']}"
+        seccion_papel =f"{row['Seccion']}"
+        direccion=f"{row['Direccion']}"
+        
+        padres_papel= f"{row['Apoderado']}"
+        mapeo_caracteres = {
+            "Ã": "Á",
+            "Ã‰": "É",
+            "Ã": "Í",
+            "Ã“": "Ó",
+            "Ãš": "Ú",
+            "Ã±": "ñ",
+            "Ã‘": "Ñ",
+            "Âª":"°",
+            "Â°":"°"
+        }
+
+        cadena_mal_codificada = padres_papel
+        cadena_mal_codificada_dire = direccion
+
+        padres_cadena_corregida = cadena_mal_codificada
+        for mal_codificado, correctamente_codificado in mapeo_caracteres.items():
+            padres_cadena_corregida = padres_cadena_corregida.replace(mal_codificado, correctamente_codificado)
+
+        direccion_cadena_corregida = cadena_mal_codificada_dire
+        for mal_codificado, correctamente_codificado in mapeo_caracteres.items():
+            direccion_cadena_corregida = direccion_cadena_corregida.replace(mal_codificado, correctamente_codificado)
+
+        dia_papel=dt.now().day
+
+            
+        if 'PRIM' in grado_papel:
+            nivel='PRIMARIA'
+            img=os.path.join(settings.MEDIA_ROOT, 'firma_prim.jpeg')
+            firma = Image.open(img)
+        elif 'SEC' in grado_papel:
+            nivel='SECUNDARIA'
+            img=os.path.join(settings.MEDIA_ROOT, 'firma_sec.jpeg')
+            firma = Image.open(img)
+        
+        imagen.paste(firma, (800, 1350))
+
+        d.text((190,495), padres_cadena_corregida, font=font, fill=(0, 0, 0))
+        d.text((190,605), alumno_papel, font=font, fill=(0, 0, 0))
+        d.text((390,665), str(grado_papel[0])+str("°"),font=font, fill=(0, 0, 0))
+        d.text((460,665), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
+        d.text((710,665), nivel,font=font, fill=(0, 0, 0))
+        d.text((855,1062), str(dia_papel),font=font, fill=(0, 0, 0))
+        #d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
+
+        nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
+        grado=row['Grado'][:1]+"°"
+        seccion=row['Seccion']
+        
+        if row['Grado'][1:5]=='PRIM':
+            if not os.path.exists('media/'+'AGRADECIMIENTO/'+str(fecha_actual)+'/PRIMARIA'):
+                os.makedirs('media/'+'AGRADECIMIENTO/'+str(fecha_actual)+'/PRIMARIA')
+            image_path = f"media/AGRADECIMIENTO/{fecha_actual}/PRIMARIA/{grado}_{seccion}_{row['DNI']}_{nombre_alumno}.jpg"
+
+        elif row['Grado'][1:4]=='SEC':
+            
+            if not os.path.exists('media/'+ 'AGRADECIMIENTO/'+str(fecha_actual)+'/SECUNDARIA'):
+                os.makedirs('media/'+'AGRADECIMIENTO/'+str(fecha_actual)+'/SECUNDARIA')
+
+            image_path = f"media/AGRADECIMIENTO/{fecha_actual}/SECUNDARIA/{grado}_{seccion}_{row['DNI']}_{nombre_alumno}.jpg"
+
+        imagen.save(image_path)

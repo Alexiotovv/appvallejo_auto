@@ -52,7 +52,20 @@
                 <a href="{% url 'appdescargar_cartascobranza' %}" class="btn btn-warning btn-sm">Descargar Cartas Invitación Salir.zip</a>
             </div>
             <br>
-            
+            <br>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="">Generar Cartas Agradecimiento</label>
+                    <button class="btn btn-primary btn-sm" onclick="obtenerDatosAgradecimiento('agradecimiento')">Procesar Cartas Agradecimiento</button>
+                </div>
+                
+            </div>
+            <div id="cartas_cobranza">
+                <br>
+                <a href="{% url 'appdescargar_agradecimiento' %}" class="btn btn-warning btn-sm">Descargar Cartas Agradecimiento.zip</a>
+            </div>
+            <br>
         </div>
         
         <div class="col-md-6">
@@ -120,8 +133,28 @@
                 }
             });
         }
-
     </script>
+
+    <script>
+        function obtenerDatosAgradecimiento(plantilla){
+            $.ajax({
+                type: "GET",
+                url: "/puntuales/obtener/"+plantilla,
+                dataType: "json",
+                beforeSend: function() {
+                    $("#spinner").prop('hidden',false);
+                    $("#espere").text("Procesando Datos, por favor espere...")
+                    $("#espere").prop('hidden',false)
+                },
+                success: function (data) {
+                    $("#archivo_generado").prop('hidden',false)
+                    $("#spinner").prop('hidden',true);
+                    $("#espere").text("Completado!")
+                }
+            });   
+        }
+    </script>
+
     <script>
 
         function guardarNumerosCartas(){
