@@ -487,7 +487,13 @@ class DescargarCarpetasAgradecimientoView(View):
         
         return response
 
-def obtener_puntuales(request,plantilla):
+def obtener_puntuales(request,plantilla):    
+    puntuales=obtener_datos_pagadores()
+    generar_imagenes_puntuales(puntuales, plantilla)
+
+    return JsonResponse({'resultado':'completado'}, safe=False)
+
+def obtener_datos_pagadores():
     puntuales = union_alumnos_pagos()
     
     # Limpiar los datos
@@ -501,9 +507,12 @@ def obtener_puntuales(request,plantilla):
             while 'MATRICULA' in item['Mes']:
                 item['Mes'].remove('MATRICULA')
 
-    # Filtrar solo los que tienen "NO" en todos los subelementos de 'Atrasado' y que no estén vacíos
+    # Filtrar solo los que tienen "NO" en todos los subelementos de 'Atrasado', que no estén vacíos y que hayan pagado hasta JUNIO
+    meses_requeridos = {'MARZO', 'ABRIL', 'MAYO', 'JUNIO'}
     puntuales_filtrados = [
-        item for item in puntuales if item.get('Atrasado') and all(atrasado == 'NO' for atrasado in item['Atrasado'])
+        item for item in puntuales 
+        if item.get('Atrasado') and all(atrasado == 'NO' for atrasado in item['Atrasado']) 
+        and set(meses_requeridos).issubset(set(item.get('Mes', [])))
     ]
 
     # Crear un nuevo array con solo los campos deseados
@@ -522,10 +531,8 @@ def obtener_puntuales(request,plantilla):
         }
         for item in puntuales_filtrados
     ]
-    
-    generar_imagenes_puntuales(puntuales_resultado,plantilla)
 
-    return JsonResponse({'resultado':'completado'}, safe=False)
+    return puntuales_resultado
 
 def generar_imagenes_puntuales(puntuales_resultado,plantilla):
     borrar_carpetas_media()
@@ -622,3 +629,18 @@ def generar_imagenes_puntuales(puntuales_resultado,plantilla):
             image_path = f"media/AGRADECIMIENTO/{fecha_actual}/SECUNDARIA/{grado}_{seccion}_{row['DNI']}_{nombre_alumno}.jpg"
 
         imagen.save(image_path)
+    
+def descargar_lista_agradecimiento(request):
+    lista_exportar=obtener_datos_pagadores()
+    df_lista=pd.DataFrame(lista_exportar)
+    df_lista.to_excel('media/lista_agradecimiento.xlsx')
+
+    nombre_archivo = 'lista_agradecimiento.xlsx'
+    ruta_archivo = os.path.join(settings.MEDIA_ROOT, nombre_archivo)
+    
+    if os.path.exists(ruta_archivo):
+        return redirect(settings.MEDIA_URL + nombre_archivo)
+    else:
+        return HttpResponse("El archivo no existe")
+    
+    
