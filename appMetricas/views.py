@@ -261,9 +261,9 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             grado_completo = str(grado_papel[0])+str("° ") + seccion_papel + " " + nivel
 
             d.text((170,348), padres_cadena_corregida, font=font, fill=(0, 0, 0))
-            d.text((170,575), alumno_papel, font=font, fill=(0, 0, 0))
+            d.text((170,575), alumno_papel+ "  "+grado_completo, font=font, fill=(0, 0, 0))
             
-            d.text((845,575), grado_completo, font=font, fill=(0, 0, 0))
+            #d.text((845,575), grado_completo, font=font, fill=(0, 0, 0))
 
             d.text((170,635), str(monto_deuda_acumulada),font=font_meses_debe, fill=(0, 0, 0))
             meses_debe_papel = '-'.join(meses_debe_papel.split('-')[:-1])
