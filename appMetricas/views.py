@@ -29,6 +29,8 @@ def descargar_lista_deben(request):
 
 def obtener_deudores(request, plantilla,meses):
     
+
+
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
     #meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
     
@@ -52,9 +54,6 @@ def obtener_deudores(request, plantilla,meses):
     # Filtrar los meses hasta el último mes de vencimiento
     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
     
-    # Función para obtener los meses que debe un alumno
-    # def obtener_meses_debe(meses_pagados):
-    #     return [mes for mes in meses_hasta_ultimo_vencimiento if mes not in meses_pagados]
     
     def obtener_meses_debe(meses_pagados, montos_pagados, descripcion):
         meses_debe = []
@@ -77,13 +76,34 @@ def obtener_deudores(request, plantilla,meses):
         return meses_debe
         
 
-    # Aplicar la función a cada fila
-    # df['MesesDebe'] = df['Mes'].apply(obtener_meses_debe)
     df['MesesDebe'] = df.apply(lambda row: obtener_meses_debe(row['Mes'], row['Monto'], row['Descripcion']), axis=1)
-    
     df = df[df['MesesDebe'].apply(len) > 1]
+    meses = int(meses)
+    
+    if plantilla=='notarial':
+        df['MesesDebeTemp'] = df['MesesDebe']
+        df['MesesDebeTemp'] = df['MesesDebeTemp'].apply(limpiar_meses)
+        if meses==3:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'MARZO' in x)]
+        if meses==4:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'ABRIL' in x)]
+        if meses==5:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'MAYO' in x)]
+        if meses==6:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'JUNIO' in x)]
+        if meses==7:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'JULIO' in x)]
+        if meses==8:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'AGOSTO' in x)]
+        if meses==9:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'SETIEMBRE' in x)]
+        if meses==10:
+            df = df[df['MesesDebeTemp'].apply(lambda x: 'OCTUBRE' in x)]
+        
+        print(df)
     ############cierre del bloque que se repite##########333
     
+        
     borrar_carpetas_media()
     generar_imagenes_cobranzas(df,plantilla,meses)
 
@@ -92,6 +112,11 @@ def obtener_deudores(request, plantilla,meses):
     resultado={'data':'success','message':'ok'}
     return JsonResponse(resultado,safe=False)
 
+def limpiar_meses(meses_debe):
+    # Filtra solo los meses (eliminando cualquier valor que no sea mes)
+    meses_validos = ['MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+    meses_debe = [mes for mes in meses_debe if mes.upper() in meses_validos]
+    return meses_debe
 
 def generar_imagenes_cobranzas(df,plantilla,meses):
     
@@ -137,7 +162,8 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
     
     elif plantilla=='invitacion':
         plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_invitacion_salir_2024.jpeg')
-
+    elif plantilla=='notarial':
+        plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_carta_notarial_2024.jpeg')
     
     cantidad_meses_recibido=int(meses)
     
@@ -147,7 +173,6 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
         if plantilla=='invitacion':
             if cantidad_meses_debe >= cantidad_meses_recibido:
                 pass
-                #print(str(row['MesesDebe']))
             else:
                 continue
         elif plantilla=='general': 
@@ -157,7 +182,7 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
         imagen = Image.open(plantilla_cobranza)
         d = ImageDraw.Draw(imagen)
 
-        alumno_papel= f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}"
+        alumno_papel= f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}" # Notarial|
         dni_alumno= f"{row['DNI']}"
         
         numero_carta_obtenida = cartasenviadas_dict.get(dni_alumno, 0)
@@ -165,10 +190,12 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
         grado_papel=f"{row['Grado']}"
         seccion_papel =f"{row['Seccion']}"
         meses_debe_papel= f"{', '.join(row['MesesDebe'])}"
-        meses_debe_papel=meses_debe_papel.replace(',', '-')
+        meses_debe_papel=meses_debe_papel.replace(',', '-') # Notarial |
         direccion=f"{row['Direccion']}"
         
-        padres_papel= f"{row['Apoderado']}"
+        padres_papel= f"{row['Apoderado']}" # Notarial|
+        monto_deuda_acumulada = meses_debe_papel.split('-')[-1]
+        # monto_deuda_acumulada = (cantidad_meses_debe-1)*250 # Notarial |
         mapeo_caracteres = {
             "Ã": "Á",
             "Ã‰": "É",
@@ -194,9 +221,9 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
 
 
         meses={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Setiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'}
-        dia_papel=dt.now().day
-        mes_papel=meses.get(dt.now().month)
-        anhio_papel=dt.now().year
+        dia_papel=dt.now().day # Notarial
+        mes_papel=meses.get(dt.now().month) # Notarial
+        anhio_papel=dt.now().year # Notarial
         fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
 
         if plantilla=='general':
@@ -220,10 +247,6 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
                 firma = Image.open(img)
             
             imagen.paste(firma, (800, 1400))
-
-            # indice_s = meses_debe_papel.rfind("S/")
-            # if indice_s != -1:
-            #     monto_str = meses_debe_papel[indice_s+2:].strip()
             
             d.text((190,520), padres_cadena_corregida, font=font, fill=(0, 0, 0))
             d.text((190,630), alumno_papel, font=font, fill=(0, 0, 0))
@@ -232,7 +255,18 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             d.text((710,690), nivel,font=font, fill=(0, 0, 0))
             d.text((190,814), meses_debe_papel+str(".00"),font=font_meses_debe, fill=(0, 0, 0))
             d.text((855,1252), str(dia_papel),font=font, fill=(0, 0, 0))
-            #d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
+        elif plantilla =='notarial':
+            d.text((170,348), padres_cadena_corregida, font=font, fill=(0, 0, 0))
+            d.text((170,575), alumno_papel, font=font, fill=(0, 0, 0))
+            #d.text((390,690), str(grado_papel[0])+str("°"),font=font, fill=(0, 0, 0))
+            #d.text((460,690), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
+            #d.text((710,690), nivel,font=font, fill=(0, 0, 0))
+            d.text((170,635), str(monto_deuda_acumulada),font=font_meses_debe, fill=(0, 0, 0))
+            meses_debe_papel = '-'.join(meses_debe_papel.split('-')[:-1])
+            d.text((170,664), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
+            # d.text((855,1060), str(dia_papel),font=font, fill=(0, 0, 0))
+            d.text((855,1060), str("20"),font=font, fill=(0, 0, 0))
+            d.text((1050,1060), str("2024"),font=font, fill=(0, 0, 0))
 
         nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
         grado=row['Grado'][:1]+"°"

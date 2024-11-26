@@ -52,7 +52,37 @@
                 <a href="{% url 'appdescargar_cartascobranza' %}" class="btn btn-warning btn-sm">Descargar Cartas Invitación Salir.zip</a>
             </div>
             <br>
+            
+            <hr>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="">Generar Cartas Notariales</label>
+                    <button class="btn btn-primary btn-sm" onclick="obtenerDatosNotarial('notarial')">Procesar Cartas Notarial</button>
+                </div>
+                <div class="col-md-6">
+                    Considerar Cartas con deudas desde
+                    <select name="desde_mes" id="desde_mes" class="form-select form-select-sm">
+                        <option value=3>Marzo</option>
+                        <option value=4>Abril</option>
+                        <option value=5>Mayo</option>
+                        <option value=6>Junio</option>
+                        <option value=7>Julio</option>
+                        <option value=8>Agosto</option>
+                        <option value=9>Setiembre</option>
+                        <option value=10>Octubre</option>
+                        <option value=11>Noviembre</option>
+                    </select>
+                </div>
+            </div>
+            <div id="cartas_cobranza">
+                <br>
+                <a href="{% url 'appdescargar_cartasnotariales' %}" class="btn btn-warning btn-sm">Descargar Cartas Notariales.zip</a>
+            </div>
             <br>
+
+
+
             <hr>
             <div class="row">
                 <div class="col-md-6">
@@ -121,6 +151,26 @@
     <script>
         function obtenerDatos(plantilla){
             meses=$("#meses").val();
+
+            $.ajax({
+                type: "GET",
+                url: "/deudores/obtener/"+plantilla+"/"+meses,
+                dataType: "json",
+                beforeSend: function() {
+                    $("#spinner").prop('hidden',false);
+                    $("#espere").text("Procesando Datos, por favor espere...")
+                    $("#espere").prop('hidden',false)
+                },
+                success: function (data) {
+                    $("#archivo_generado").prop('hidden',false)
+                    $("#spinner").prop('hidden',true);
+                    $("#espere").text("Completado!")
+                }
+            });
+        }
+
+        function obtenerDatosNotarial(plantilla){
+            meses=$("#desde_mes").val();
 
             $.ajax({
                 type: "GET",
