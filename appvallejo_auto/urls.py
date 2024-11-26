@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('appMain.urls')),
     path('', include('appMetricas.urls')),
+    path('', include('appsettingsCartas.urls')),
 ]
 
 if settings.DEBUG:

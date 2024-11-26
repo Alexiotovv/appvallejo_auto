@@ -1,0 +1,103 @@
+{% extends "bases/base.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            
+            <h5>Configurar Cartas Notariales</h5>
+            <br>
+
+
+            {% if messages %}
+                <div>
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form action="{% url 'appsettingsnotarial_save' %}" method="POST">{% csrf_token %}
+
+                <div class="row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" {% if estado %} checked {% endif %}>
+                        <label class="form-check-label" for="flexCheckChecked">Dejar Fecha del Sistema</label>
+                    </div>
+
+                    <!-- <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="on" id="estado" name="estado" 
+                               {% if estado %} checked {% endif %}>
+                        <label class="form-check-label" for="estado">
+                            Dejar fecha del sistema
+                        </label>
+                    </div> -->
+                
+                    <div class="col-md-3">
+                        <label for="">Dia en Carta</label>
+                        <input type="number" class="form-control form-control-sm" value="{{ dia }}" id="dia" name="dia">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="">Mes en Carta</label>
+                        <select name="mes" id="mes" class="form-select form-select-sm">
+                            <option value="Marzo" {% if mes == "Marzo" %}selected{% endif %}>Marzo</option>
+                            <option value="Abril" {% if mes == "Abril" %}selected{% endif %}>Abril</option>
+                            <option value="Mayo" {% if mes == "Mayo" %}selected{% endif %}>Mayo</option>
+                            <option value="Junio" {% if mes == "Junio" %}selected{% endif %}>Junio</option>
+                            <option value="Julio" {% if mes == "Julio" %}selected{% endif %}>Julio</option>
+                            <option value="Agosto" {% if mes == "Agosto" %}selected{% endif %}>Agosto</option>
+                            <option value="Setiembre" {% if mes == "Setiembre" %}selected{% endif %}>Setiembre</option>
+                            <option value="Octubre" {% if mes == "Octubre" %}selected{% endif %}>Octubre</option>
+                            <option value="Noviembre" {% if mes == "Noviembre" %}selected{% endif %}>Noviembre</option>
+                            <option value="Diciembre" {% if mes == "Diciembre" %}selected{% endif %}>Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="">Año en Carta</label>
+                        <input type="number" class="form-control form-control-sm" value="{{ ano }}" id="ano" name="ano">
+                    </div>
+                
+                    <button type="submit" class="btn btn-primary btn-sm" onclick="guardar_setting_notarial()">Guardar</button>
+                </div>
+                
+            </form>
+            <br>
+        </div>
+            
+
+    </div>
+
+
+
+
+
+{% endblock content %}
+
+{% block js %}  
+    
+<script>
+    $(document).ready(function () {
+        $('#estado').change(function () {
+            // Verificar si el checkbox está seleccionado
+            let isChecked = $(this).is(':checked');
+            // Habilitar o deshabilitar los inputs
+            $('#dia, #mes, #ano').prop('readonly', isChecked);
+
+        });
+    });
+
+    //function guardar_setting_notarial() { 
+    //    $.ajax({
+    //        type: "POST",
+    //        url: "url",
+    //        data: "data",
+    //        dataType: "dataType",
+    //        success: function (data) {
+    //            
+    //        }
+    //    });
+    // };
+
+</script>
+{% endblock js %}

@@ -29,8 +29,6 @@ def descargar_lista_deben(request):
 
 def obtener_deudores(request, plantilla,meses):
     
-
-
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
     #meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
     
@@ -265,8 +263,9 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             meses_debe_papel = '-'.join(meses_debe_papel.split('-')[:-1])
             d.text((170,664), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
             # d.text((855,1060), str(dia_papel),font=font, fill=(0, 0, 0))
-            d.text((855,1060), str("20"),font=font, fill=(0, 0, 0))
-            d.text((1050,1060), str("2024"),font=font, fill=(0, 0, 0))
+            d.text((845,1070), str("20"),font=font, fill=(0, 0, 0))
+            d.text((890,1070), str("de Noviembre"),font=font, fill=(0, 0, 0))
+            d.text((1060,1070), str("2024"),font=font, fill=(0, 0, 0))
 
         nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
         grado=row['Grado'][:1]+"°"
