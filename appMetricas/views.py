@@ -254,15 +254,23 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             d.text((190,814), meses_debe_papel+str(".00"),font=font_meses_debe, fill=(0, 0, 0))
             d.text((855,1252), str(dia_papel),font=font, fill=(0, 0, 0))
         elif plantilla =='notarial':
+            if 'PRIM' in grado_papel:
+                nivel='PRIMARIA'
+            if 'SEC' in grado_papel:
+                nivel='SECUNDARIA'
+            grado_completo = str(grado_papel[0])+str("° ") + seccion_papel + " " + nivel
+
             d.text((170,348), padres_cadena_corregida, font=font, fill=(0, 0, 0))
             d.text((170,575), alumno_papel, font=font, fill=(0, 0, 0))
-            #d.text((390,690), str(grado_papel[0])+str("°"),font=font, fill=(0, 0, 0))
-            #d.text((460,690), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
-            #d.text((710,690), nivel,font=font, fill=(0, 0, 0))
+            
+            d.text((845,575), grado_completo, font=font, fill=(0, 0, 0))
+
             d.text((170,635), str(monto_deuda_acumulada),font=font_meses_debe, fill=(0, 0, 0))
             meses_debe_papel = '-'.join(meses_debe_papel.split('-')[:-1])
             d.text((170,664), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
-            # d.text((855,1060), str(dia_papel),font=font, fill=(0, 0, 0))
+            d.text((390,690), str(grado_papel[0])+str("°"),font=font, fill=(0, 0, 0))
+            d.text((460,690), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
+            d.text((710,690), nivel,font=font, fill=(0, 0, 0))
             d.text((845,1070), str("20"),font=font, fill=(0, 0, 0))
             d.text((890,1070), str("de Noviembre"),font=font, fill=(0, 0, 0))
             d.text((1060,1070), str("2024"),font=font, fill=(0, 0, 0))
