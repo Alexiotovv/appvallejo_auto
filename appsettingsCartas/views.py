@@ -22,12 +22,15 @@ def index(request):
 def save_setting(request):
     if request.method == "POST":
         # Obtener los datos del formulario
-        estado = request.POST.get('estado') == 'on'  # Convertir a booleano
+        estado = request.POST.get('estado_input')  # Convertir a booleano
         dia = request.POST.get('dia')
         mes = request.POST.get('mes')
         ano = request.POST.get('ano')
 
-        print(request.POST.get('estado'))
+        if estado=='true':
+            estado=True
+        elif estado=='false':
+            estado=False
 
         # Verificar si existe algún registro
         obj = settingsCartas.objects.first()

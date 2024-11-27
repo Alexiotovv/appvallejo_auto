@@ -22,25 +22,18 @@
 
                 <div class="row">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" {% if estado %} checked {% endif %}>
-                        <label class="form-check-label" for="flexCheckChecked">Dejar Fecha del Sistema</label>
+                        <input type="text" value="{{ estado }}" id="estado_input" name="estado_input" >
+                        <input class="form-check-input" type="checkbox" value="" id="estado" {% if estado %} checked {% endif %}>
+                        <label class="form-check-label" for="estado">Dejar Fecha del Sistema</label>
                     </div>
-
-                    <!-- <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="on" id="estado" name="estado" 
-                               {% if estado %} checked {% endif %}>
-                        <label class="form-check-label" for="estado">
-                            Dejar fecha del sistema
-                        </label>
-                    </div> -->
-                
+               
                     <div class="col-md-3">
                         <label for="">Dia en Carta</label>
                         <input type="number" class="form-control form-control-sm" value="{{ dia }}" id="dia" name="dia">
                     </div>
                     <div class="col-md-3">
                         <label for="">Mes en Carta</label>
-                        <select name="mes" id="mes" class="form-select form-select-sm">
+                        <select name="mes" id="mes" class="form-select form-select-sm" >
                             <option value="Marzo" {% if mes == "Marzo" %}selected{% endif %}>Marzo</option>
                             <option value="Abril" {% if mes == "Abril" %}selected{% endif %}>Abril</option>
                             <option value="Mayo" {% if mes == "Mayo" %}selected{% endif %}>Mayo</option>
@@ -57,8 +50,11 @@
                         <label for="">Año en Carta</label>
                         <input type="number" class="form-control form-control-sm" value="{{ ano }}" id="ano" name="ano">
                     </div>
-                
-                    <button type="submit" class="btn btn-primary btn-sm" onclick="guardar_setting_notarial()">Guardar</button>
+                    <div class="col-md-4">
+                        <br>
+                        <button type="submit" class="btn btn-primary btn-sm" onclick="guardar_setting_notarial()">Guardar</button>
+
+                    </div>
                 </div>
                 
             </form>
@@ -78,26 +74,18 @@
     
 <script>
     $(document).ready(function () {
-        $('#estado').change(function () {
-            // Verificar si el checkbox está seleccionado
-            let isChecked = $(this).is(':checked');
-            // Habilitar o deshabilitar los inputs
-            $('#dia, #mes, #ano').prop('readonly', isChecked);
-
-        });
+        // Esperar 1 segundo antes de ejecutar el código
+        setTimeout(function () {
+            $('#estado').change(function () {
+                // Verificar si el checkbox está seleccionado
+                let isChecked = $(this).is(':checked');
+                $("#estado_input").val(isChecked);
+                $('#dia, #mes, #ano').prop('readonly', isChecked);
+            });
+        }, 1000); // 1000 milisegundos = 1 segundo
     });
+    
 
-    //function guardar_setting_notarial() { 
-    //    $.ajax({
-    //        type: "POST",
-    //        url: "url",
-    //        data: "data",
-    //        dataType: "dataType",
-    //        success: function (data) {
-    //            
-    //        }
-    //    });
-    // };
 
 </script>
 {% endblock js %}

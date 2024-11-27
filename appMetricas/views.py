@@ -13,6 +13,8 @@ import platform
 from django.conf import settings
 import shutil
 
+from appsettingsCartas.models import settingsCartas
+
 def index(request):
     return render(request, 'metricas/index.html')
 
@@ -155,6 +157,12 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
 
     cartasenviadas_dict={cartas.dni_alumno:cartas.numero_carta for cartas in cartasenviadas}
     
+    meses_fecha={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Setiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'}
+    dia_papel=dt.now().day # Notarial
+    mes_papel=meses_fecha.get(dt.now().month) # Notarial
+    anhio_papel=dt.now().year # Notarial
+    fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
+
     if plantilla=='general':
         plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_cobranza_2024.jpeg')
     
@@ -162,6 +170,15 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
         plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_invitacion_salir_2024.jpeg')
     elif plantilla=='notarial':
         plantilla_cobranza=os.path.join(settings.MEDIA_ROOT, 'plantilla_carta_notarial_2024.jpeg')
+        
+        ##obtener fecha de carta Notarial de la base de datos
+        fecha_notarial = settingsCartas.objects.first()
+        
+        if fecha_notarial.Estado:
+            dia_papel=fecha_notarial.Dia
+            mes_papel=fecha_notarial.Mes
+            anhio_papel=fecha_notarial.Ano
+            fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
     
     cantidad_meses_recibido=int(meses)
     
@@ -218,11 +235,11 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             direccion_cadena_corregida = direccion_cadena_corregida.replace(mal_codificado, correctamente_codificado)
 
 
-        meses={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Setiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'}
-        dia_papel=dt.now().day # Notarial
-        mes_papel=meses.get(dt.now().month) # Notarial
-        anhio_papel=dt.now().year # Notarial
-        fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
+        # meses={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Setiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'}
+        # dia_papel=dt.now().day # Notarial
+        # mes_papel=meses.get(dt.now().month) # Notarial
+        # anhio_papel=dt.now().year # Notarial
+        # fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
 
         if plantilla=='general':
             d.text((900,298), "N° "+ str(int(numero_carta_obtenida+1)), font=font_carta, fill=(0, 0, 0))
@@ -261,7 +278,7 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             grado_completo = str(grado_papel[0])+str("° ") + seccion_papel + " " + nivel
 
             d.text((170,348), padres_cadena_corregida, font=font, fill=(0, 0, 0))
-            d.text((170,575), alumno_papel+ "  "+grado_completo, font=font, fill=(0, 0, 0))
+            d.text((170,577), alumno_papel+ "  "+grado_completo, font=font, fill=(0, 0, 0))
             
             #d.text((845,575), grado_completo, font=font, fill=(0, 0, 0))
 
@@ -269,9 +286,10 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             meses_debe_papel = '-'.join(meses_debe_papel.split('-')[:-1])
             d.text((170,664), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
             
-            d.text((845,1070), str("20"),font=font, fill=(0, 0, 0))
-            d.text((890,1070), str("de Noviembre"),font=font, fill=(0, 0, 0))
-            d.text((1060,1070), str("2024"),font=font, fill=(0, 0, 0))
+
+            d.text((845,1075), (str(dia_papel)+" de "+ str(mes_papel) +" del "+ str(anhio_papel)),font=font, fill=(0, 0, 0))
+            # d.text((890,1070), str(mes_papel),font=font, fill=(0, 0, 0))
+            # d.text((1060,1070), str(anhio_papel),font=font, fill=(0, 0, 0))
 
         nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
         grado=row['Grado'][:1]+"°"
