@@ -79,26 +79,31 @@ def obtener_deudores(request, plantilla,meses):
     df['MesesDebe'] = df.apply(lambda row: obtener_meses_debe(row['Mes'], row['Monto'], row['Descripcion']), axis=1)
     df = df[df['MesesDebe'].apply(len) > 1]
     meses = int(meses)
+    df['MesesDebeTemp'] = df['MesesDebe']
+    df['MesesDebeTemp'] = df['MesesDebeTemp'].apply(limpiar_meses)
     
-    if plantilla=='notarial':
-        df['MesesDebeTemp'] = df['MesesDebe']
-        df['MesesDebeTemp'] = df['MesesDebeTemp'].apply(limpiar_meses)
-        if meses==3:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'MARZO' in x)]
-        if meses==4:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'ABRIL' in x)]
-        if meses==5:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'MAYO' in x)]
-        if meses==6:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'JUNIO' in x)]
-        if meses==7:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'JULIO' in x)]
-        if meses==8:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'AGOSTO' in x)]
-        if meses==9:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'SETIEMBRE' in x)]
-        if meses==10:
-            df = df[df['MesesDebeTemp'].apply(lambda x: 'OCTUBRE' in x)]
+    meses_nombres = {
+        1: 'ENERO',
+        2: 'FEBRERO',
+        3: 'MARZO',
+        4: 'ABRIL',
+        5: 'MAYO',
+        6: 'JUNIO',
+        7: 'JULIO',
+        8: 'AGOSTO',
+        9: 'SETIEMBRE',
+        10: 'OCTUBRE',
+        11: 'NOVIEMBRE',
+        12: 'DICIEMBRE'
+    }
+
+    if plantilla == 'notarial':
+        # Filtrar los meses que comienzan desde el mes indicado en adelante
+        if meses in meses_nombres:
+            mes_inicio = meses_nombres[meses]  # Obtener el nombre del mes correspondiente
+            
+            # Filtrar filas donde MesesDebeTemp comience exactamente desde `mes_inicio`
+            df = df[df['MesesDebeTemp'].apply(lambda x: x[0] == mes_inicio)]
         
         print(df)
     ############cierre del bloque que se repite##########333
