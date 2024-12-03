@@ -179,7 +179,7 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
         ##obtener fecha de carta Notarial de la base de datos
         fecha_notarial = settingsCartas.objects.first()
         
-        if fecha_notarial.Estado:
+        if fecha_notarial and fecha_notarial.Estado == False:
             dia_papel=fecha_notarial.Dia
             mes_papel=fecha_notarial.Mes
             anhio_papel=fecha_notarial.Ano
