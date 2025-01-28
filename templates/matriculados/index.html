@@ -96,6 +96,7 @@
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
+                      console.log(data)
                         $("#tablaMatriculados").DataTable({
                             "destroy":true,
                             "data":data,

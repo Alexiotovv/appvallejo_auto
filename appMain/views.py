@@ -244,7 +244,36 @@ def matriculados_filtro(request,fecha1,fecha2):
     datos = obtener_matriculados(fecha1, fecha2)
     
     # Serializar los datos a JSON
-    return JsonResponse(datos, safe=False)
+    datos_corregidos=correccion_caracteres(datos)
+    return JsonResponse(datos_corregidos, safe=False)
+
+def correccion_caracteres(datos):
+    mapeo_caracteres = {
+            "Ã": "Á",
+            "Ã‰": "É",
+            "Ã": "Í",
+            "Ã“": "Ó",
+            "Ãš": "Ú",
+            "Ã±": "ñ",
+            "Ã‘": "Ñ",
+            "Âª":"°",
+            "Â°":"°"
+    }
+
+    datos_corregidos = []
+    
+    # Iterar sobre los datos y corregir los caracteres especiales solo en las columnas específicas
+    for registro in datos:
+        registro_corregido = registro.copy()  # Hacer una copia del registro original
+        for columna in ["Alumno", "Apoderado", "Direccion"]:
+            if columna in registro:
+                valor = registro[columna]
+                for clave, reemplazo in mapeo_caracteres.items():
+                    valor = valor.replace(clave, reemplazo)
+                registro_corregido[columna] = valor  # Actualizar solo el campo corregido
+        datos_corregidos.append(registro_corregido)
+
+    return datos_corregidos
 
 
 
