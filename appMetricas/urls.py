@@ -10,6 +10,7 @@ urlpatterns = [
     path('descargar_carpetas/', DescargarCarpetasView.as_view(), name='appdescargar_cartascobranza'),
     path('descargar_carpetas/', DescargarCarpetasView.as_view(), name='appdescargar_cartasnotariales'), 
     path('descargar_carpetas_agradecimiento/', DescargarCarpetasAgradecimientoView.as_view(), name='appdescargar_agradecimiento'),
+   
 
 
 ]

@@ -1,0 +1,132 @@
+{% extends "bases/base.html" %}
+      
+{% block css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+{% endblock css %}
+
+{% block title %}
+    Matriculados
+{% endblock title %}
+
+{% block content %}
+    <h5>Filtrar Matriculados</h5>
+    <div class="container mt-4">
+        <!-- Filtros -->
+        <div class="card p-4">
+          <h5 class="card-title">Filtrado</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <label for="startDate" class="form-label">Fecha inicio</label>
+              <input type="date" id="fecha1" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label for="endDate" class="form-label">Fecha fin</label>
+              <input type="date" id="fecha2" class="form-control">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button id="filterButton" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+          </div>
+        </div>
+      
+        <!-- Tabla -->
+        <div class="card mt-4 p-4">
+          <h5 class="card-title">Resultados</h5>
+          <div class="table-responsive">
+            <table id="tablaMatriculados" class="table table-striped">
+              <thead>
+                <tr>
+                    <th>Dni</th>
+                    <th>Alumno</th>
+                    <th>Grado</th>
+                    <th>Seccion</th>
+                    <th>Nivel</th>
+                    <th>Apoderado</th>
+                    <th>Direccion</th>
+                    <th>Telefono</th>
+                    <th>FechaPago</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Aquí se llenarán los datos dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      
+      
+     
+      {% block js %}
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+        
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    {% endblock js %}
+      
+    
+      <script>
+
+        
+            // Evento al hacer clic en el botón de filtrar
+            $('#filterButton').on('click', function () {
+                
+                // Obtener valores de las fechas
+                let fecha1 = $('#fecha1').val();
+                let fecha2 = $('#fecha2').val();
+        
+                // Validar que las fechas no estén vacías
+                if (!fecha1 || !fecha2) {
+                    alert('Por favor, selecciona ambas fechas.');
+                    return;
+                }
+        
+                // Realizar petición AJAX
+                $.ajax({
+                    url: '/matriculados/filtro/' + fecha1 + '/' + fecha2, // URL de tu vista Django
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        $("#tablaMatriculados").DataTable({
+                            "destroy":true,
+                            "data":data,
+                            "columns":[
+                                { data: 'Dni' },
+                                { data: 'Alumno' },
+                                { data: 'Grado' },
+                                { data: 'Seccion' },
+                                { data: 'Nivel' },
+                                { data: 'Apoderado' },
+                                { data: 'Direccion' },
+                                { data: 'Telefono' },
+                                { data: 'FechaPago' }
+                            ],
+                            //pone el orden de los botones de exportar
+                            "buttons": [ 'excel', 'pdf'],
+                            dom: 'Bfrtip',
+                            //order: [[3, 'asc'], [4, 'asc'], [5, 'asc']],
+                            paging: false,
+                            // Esta función se llama después de que DataTables redibuja la tabla
+                          
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error al obtener los datos:', error);
+                        alert('Hubo un error al filtrar los datos.');
+                    }
+                });
+            });
+    
+          
+    </script>
+      
+{% endblock content %}

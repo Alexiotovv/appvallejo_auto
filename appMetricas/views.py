@@ -413,7 +413,6 @@ def obtener_datos_de_api(url):
         print("Something went wrong:", err)
     return None        
 
-
 def guardar_numeros_cartas(request):
     
     vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
@@ -451,8 +450,6 @@ def guardar_numeros_cartas(request):
     
     resultado={'data':'success','message':'ok'}
     return JsonResponse(resultado,safe=False)
-
-
 
 from django.views.generic import View
 import zipfile
@@ -705,4 +702,5 @@ def descargar_lista_agradecimiento(request):
     else:
         return HttpResponse("El archivo no existe")
     
-    
+
+

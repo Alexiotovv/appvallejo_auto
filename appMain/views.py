@@ -9,6 +9,8 @@ from datetime import datetime as dt
 from django.http import JsonResponse
 import pandas as pd
 from django.http import HttpResponse
+from django.core.serializers import serialize
+from datetime import datetime
 
 
 def cant_pagos_nivel(request):
@@ -183,8 +185,66 @@ def generar_pagos():
 
     return resultados
 
-    
 
+"""En esta función solo obtiene del sistema de facturación porque solo importa los matriculados"""
+def obtener_matriculados(fecha1,fecha2):
+    try:
+        cursor, connection= conexion_cursor()
+        cursor.execute(
+            """
+            SELECT 
+                vpm.Dni as 'Dni',
+                CONCAT(vpm.apellido, ' ', vpm.nombre) as 'Alumno',
+                vpm.Grado as 'Grado',
+                vpm.Seccion as 'Seccion',
+                vpm.Nivel as 'Nivel',
+                vpm.Apoderado as 'Apoderado',
+                vpm.Direccion as 'Direccion',
+                vpm.Telefono as 'Telefono',
+                vpm.FechaPago as 'FechaPago'
+            FROM view_pagos_matriculas as vpm 
+            WHERE vpm.Concepto = 'MATRICULA'
+            AND vpm.FechaPago BETWEEN %s AND %s
+            """,
+            [fecha1, fecha2]  # Pasar las fechas como parámetros
+        )
+        matriculados = cursor.fetchall()  # Obtener los resultados
+        return matriculados
+    except Exception as e:
+        print(f"Error al obtener matriculados: {e}")
+        return []
+    finally:
+        # Asegurarse de cerrar el cursor y la conexión
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+def conexion_cursor():
+    resultados=[]
+    connection = connections['facturacion']
+    connection.ensure_connection()
+    cursor = connection.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    return cursor,connection
+
+
+def matriculados_index(request):
+    return render(request,'matriculados/index.html')
+
+def matriculados_filtro(request,fecha1,fecha2):
+    try:
+        # Validar formato de fecha
+        fecha1 = datetime.strptime(fecha1, "%Y-%m-%d").date()
+        fecha2 = datetime.strptime(fecha2, "%Y-%m-%d").date()
+    except ValueError:
+        return JsonResponse({"error": "Formato de fecha inválido"}, status=400)
+
+    # Obtener los matriculados con las fechas filtradas
+    datos = obtener_matriculados(fecha1, fecha2)
+    
+    # Serializar los datos a JSON
+    return JsonResponse(datos, safe=False)
 
 
 

@@ -5,7 +5,14 @@
   
 <!-- Mirrored from html.phoenixcoded.net/light-able/bootstrap/widget/w_data.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 07 May 2024 15:07:39 GMT -->
 <head>
-    <title>Dashboard</title>
+
+    <title>
+      {% block title %}
+        Dashboard
+      {% endblock title %}
+      
+    </title>
+    
     <!-- [Meta] -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
@@ -19,24 +26,24 @@
     <!-- [Favicon] icon -->
     <link rel="icon" href="/static/assets/images/favicon.svg" type="image/x-icon" />
     <script src="../static/assets/js/jquery-3.7.1.min.js"></script>
- <!-- [Google Font : Public Sans] icon -->
-<link href="/static/fonts.googleapis.com/css23da6.css?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <!-- [Google Font : Public Sans] icon -->
+    <link href="/static/fonts.googleapis.com/css23da6.css?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="/static/assets/css/plugins/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="/static/assets/css/plugins/responsive.bootstrap5.min.css">
+    <link rel="stylesheet" href="/static/assets/css/plugins/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="/static/assets/css/plugins/responsive.bootstrap5.min.css">
 
 
-<!-- [Tabler Icons] https://tablericons.com -->
-<link rel="stylesheet" href="/static/assets/fonts/tabler-icons.min.css" >
-<!-- [Feather Icons] https://feathericons.com -->
-<link rel="stylesheet" href="/static/assets/fonts/feather.css" >
-<!-- [Font Awesome Icons] https://fontawesome.com/icons -->
-<link rel="stylesheet" href="/static/assets/fonts/fontawesome.css" >
-<!-- [Material Icons] https://fonts.google.com/icons -->
-<link rel="stylesheet" href="/static/assets/fonts/material.css" >
-<!-- [Template CSS Files] -->
-<link rel="stylesheet" href="/static/assets/css/style.css" id="main-style-link" >
-<link rel="stylesheet" href="/static/assets/css/style-preset.css" >
+    <!-- [Tabler Icons] https://tablericons.com -->
+    <link rel="stylesheet" href="/static/assets/fonts/tabler-icons.min.css" >
+    <!-- [Feather Icons] https://feathericons.com -->
+    <link rel="stylesheet" href="/static/assets/fonts/feather.css" >
+    <!-- [Font Awesome Icons] https://fontawesome.com/icons -->
+    <link rel="stylesheet" href="/static/assets/fonts/fontawesome.css" >
+    <!-- [Material Icons] https://fonts.google.com/icons -->
+    <link rel="stylesheet" href="/static/assets/fonts/material.css" >
+    <!-- [Template CSS Files] -->
+    <link rel="stylesheet" href="/static/assets/css/style.css" id="main-style-link" >
+    <link rel="stylesheet" href="/static/assets/css/style-preset.css" >
 
 {% block css %}
   
@@ -91,6 +98,9 @@
             </ul>
             <ul class="pc-submenu">
               <li class="pc-item"><a class="pc-link" href="{% url 'appsettingsindex' %}">Settings</a></li> 
+            </ul>
+            <ul class="pc-submenu">
+              <li class="pc-item"><a class="pc-link" href="{% url 'appmatriculadosindex' %}">Matriculados</a></li> 
             </ul>
           </li>
           <li class="pc-item pc-hasmenu">
