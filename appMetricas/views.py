@@ -12,8 +12,24 @@ from PIL import Image, ImageDraw, ImageFont
 import platform
 from django.conf import settings
 import shutil
+import datetime
+from appsettingsCartas.models import settingsCartas, settingsDatos
 
-from appsettingsCartas.models import settingsCartas
+
+datos_url=""
+datos_ano_actual=""
+datos_monto_pago=0
+
+datos= settingsDatos.objects.first()
+if datos:
+    datos_url = datos.url
+    datos_ano_actual = datos.ano_actual
+    datos_monto_pago = datos.monto_pago
+else:
+    datos_url="https://colcoopcv.com/listar/matriculados/2025",
+    datos_ano_actual = datetime.date.today().year,
+    datos_monto_pago = 270
+
 
 def index(request):
     return render(request, 'metricas/index.html')
@@ -53,8 +69,7 @@ def obtener_deudores(request, plantilla,meses):
     
     # Filtrar los meses hasta el último mes de vencimiento
     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
-    
-    
+
     def obtener_meses_debe(meses_pagados, montos_pagados, descripcion):
         meses_debe = []
         deuda_total = 0
@@ -62,15 +77,15 @@ def obtener_deudores(request, plantilla,meses):
             total_monto_pagado = 0
             for i, mes_pagado in enumerate(meses_pagados):
                 if mes_pagado == mes:
-                    if montos_pagados[i] >= 250 or 'BECA' in descripcion[i]:
-                        total_monto_pagado = 250  # Esto asegura que el mes se considere pagado
+                    if montos_pagados[i] >= datos_monto_pago or 'BECA' in descripcion[i]:
+                        total_monto_pagado = datos_monto_pago  # Esto asegura que el mes se considere pagado
                         break
-                    elif 'CUENTA' in descripcion[i] or montos_pagados[i] < 250:
+                    elif 'CUENTA' in descripcion[i] or montos_pagados[i] < datos_monto_pago:
                         total_monto_pagado += montos_pagados[i]
 
-            if total_monto_pagado < 250:
+            if total_monto_pagado < datos_monto_pago:
                 meses_debe.append(mes)
-                deuda_total += 250 - total_monto_pagado
+                deuda_total += datos_monto_pago - total_monto_pagado
 
         meses_debe.append(f'S/ {deuda_total}')
         return meses_debe
@@ -240,12 +255,6 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             direccion_cadena_corregida = direccion_cadena_corregida.replace(mal_codificado, correctamente_codificado)
 
 
-        # meses={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Setiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'}
-        # dia_papel=dt.now().day # Notarial
-        # mes_papel=meses.get(dt.now().month) # Notarial
-        # anhio_papel=dt.now().year # Notarial
-        # fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
-
         if plantilla=='general':
             d.text((900,298), "N° "+ str(int(numero_carta_obtenida+1)), font=font_carta, fill=(0, 0, 0))
             d.text((230,425), padres_cadena_corregida, font=font, fill=(0, 0, 0))
@@ -334,10 +343,9 @@ def union_alumnos_pagos():
         direcciones = cursor3.fetchall()
         
         # #consumiendo la api del sistema de notas
-        url = "https://colcoopcv.com/listar/matriculados/2024"
+        url = datos_url
         alumnos = obtener_datos_de_api(url)
         
-        print('datos obtenidos del sistema de notas.......................')
         if alumnos is None:
             return JsonResponse({"error": "No se pudieron obtener los datos de la API."}, status=500)
 
@@ -386,7 +394,6 @@ def union_alumnos_pagos():
 
             resultados.append(combinado)
         
-        print('union local con datos obtenidor terminada.........................')
         return resultados
         
     except ConnectionDoesNotExist:

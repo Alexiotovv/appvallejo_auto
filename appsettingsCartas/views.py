@@ -2,21 +2,39 @@ from django.shortcuts import render,redirect
 from django.contrib import messages
 from django.http import JsonResponse
 
-from appsettingsCartas.models import settingsCartas
+from appsettingsCartas.models import settingsCartas, settingsDatos
+import datetime
 
 def index(request):
     # Obtener el primer registro de la tabla settingsCartas si existe
     settings = settingsCartas.objects.first()
-
+    settingsdatos = settingsDatos.objects.first()
+    url=""
+    ano_actual=""
+    monto_pago=0
+    if settingsdatos:
+        url = settingsdatos.url
+        ano_actual = settingsdatos.ano_actual
+        monto_pago = settingsdatos.monto_pago
+    else:
+        datos=settingsDatos.objects.create(
+            url="https://colcoopcv.com/listar/matriculados/2025",
+            ano_actual = datetime.date.today().year,
+            monto_pago = 270.00
+        )
+        url = datos.url
+        ano_actual = datos.ano_actual
+        monto_pago = datos.monto_pago
     # Pasar los valores al template
     context = {
         "dia": settings.Dia if settings else "",
         "mes": settings.Mes if settings else "",
         "ano": settings.Ano if settings else "",
         "estado": settings.Estado if settings else False,
+        "url":url,"ano_actual":ano_actual,"monto_pago":monto_pago
     }
-    print("mostrando datos")
-    print(context)
+
+
     return render(request, 'settings/index.html', context)
 
 def save_setting(request):
@@ -53,3 +71,27 @@ def save_setting(request):
 
     messages.error(request, "Método no permitido.")
     return redirect('appsettingsindex')
+
+def save_settingdatos(request):
+    if request.method == 'POST':
+        # Obtener los datos enviados
+        url = request.POST.get('url')
+        ano_actual = request.POST.get('ano_actual')
+        monto_pago = request.POST.get('monto_pago')
+        
+        # Guardar los datos
+        settings = settingsDatos.objects.first()
+        if settings:
+            settings.url = url
+            settings.ano_actual = ano_actual
+            settings.monto_pago = monto_pago
+            settings.save()
+        else:
+            settings = settingsDatos.objects.create(
+                url=url,
+                ano_actual=ano_actual,
+                monto_pago=monto_pago
+            )
+
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
