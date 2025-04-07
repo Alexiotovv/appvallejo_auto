@@ -11,6 +11,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django.core.serializers import serialize
 from datetime import datetime
+from appsettingsCartas.models import settingsDatos
 
 
 def cant_pagos_nivel(request):
@@ -52,7 +53,22 @@ def index(request):
     meses=[{'mes':'MARZO'},{'mes':'ABRIL'},{'mes':'MAYO'},{'mes':'JUNIO'},{'mes':'JULIO'},{'mes':'AGOSTO'},{'mes':'SETIEMBRE'},{'mes':'OCTUBRE'},{'mes':'NOVIEMBRE'},{'mes':'DICIEMBRE'}]
     return render(request,'homes/home.html',{'meses':meses})
 
+
+
 def refrescar_datos(request):
+    datos_url=""
+    # datos_ano_actual=""
+    # datos_monto_pago=0
+    datos= settingsDatos.objects.first()
+    if datos:
+        datos_url = datos.url
+        # datos_ano_actual = datos.ano_actual
+        # datos_monto_pago = datos.monto_pago
+    else:
+        datos_url="https://colcoopcv.com/listar/matriculados/2025",
+        # datos_ano_actual = datetime.date.today().year,
+        # datos_monto_pago = 270
+        
     connection = connections['facturacion']
     connection.ensure_connection()
 
@@ -60,7 +76,7 @@ def refrescar_datos(request):
     cursor.execute("SELECT * FROM view_pagos vp")
     pagos = cursor.fetchall()
 
-    url = "https://colcoopcv.com/listar/matriculados/2024"
+    url = datos_url
     alumnos = obtener_datos_de_api(url)
     campo_no_deseado = 'Id'
 
@@ -115,6 +131,16 @@ def generar_deudores(data):
     
     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
     
+
+
+    datos_monto_pago=0
+    datos= settingsDatos.objects.first()
+    if datos:
+        datos_monto_pago = datos.monto_pago
+    else:
+        datos_monto_pago = 270
+
+
     def obtener_meses_debe(meses_pagados, montos_pagados, descripcion):
         meses_debe = []
         deuda_total = 0
@@ -122,15 +148,15 @@ def generar_deudores(data):
             total_monto_pagado = 0
             for i, mes_pagado in enumerate(meses_pagados):
                 if mes_pagado == mes:
-                    if montos_pagados[i] >= 250 or 'BECA' in descripcion[i]:
-                        total_monto_pagado = 250  # Esto asegura que el mes se considere pagado
+                    if montos_pagados[i] >= datos_monto_pago or 'BECA' in descripcion[i]:
+                        total_monto_pagado = datos_monto_pago  # Esto asegura que el mes se considere pagado
                         break
-                    elif 'CUENTA' in descripcion[i] or montos_pagados[i] < 250:
+                    elif 'CUENTA' in descripcion[i] or montos_pagados[i] < datos_monto_pago:
                         total_monto_pagado += montos_pagados[i]
 
-            if total_monto_pagado < 250:
+            if total_monto_pagado < datos_monto_pago:
                 meses_debe.append(mes)
-                deuda_total += 250 - total_monto_pagado
+                deuda_total += datos_monto_pago - total_monto_pagado
 
         meses_debe.append(f'S/Total: {deuda_total}')
         return meses_debe
