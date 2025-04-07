@@ -303,3 +303,9 @@ def correccion_caracteres(datos):
 
 
 
+def reset_numero_cartas(request):
+    try:
+        CartasEnviadas.objects.all().update(numero_carta=0)
+        return JsonResponse({'success': True, 'message': 'Números reseteados correctamente'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})

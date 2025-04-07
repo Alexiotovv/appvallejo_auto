@@ -92,9 +92,21 @@
         <!-- Mensaje de éxito que aparecerá después de guardar -->
         <div class="alert alert-success mt-3" id="mensajeExito" style="display: none;">
             Configuración guardada con éxito.
+            <br>
         </div>
-
-
+        
+        <h5>Resetear Números de cartas a 0</h5>
+        <br>
+        <div class="row">
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary btn-sm" id="resetBtn">Resetear Número de Cartas</button>
+            </div>
+        </row>
+        <div class="alert alert-success mt-3" id="mensajeExitoReset" style="display: none;">
+            Número de Cartas reseteadas con éxito.
+        </div>
+        <div class="alert alert-danger mt-3" id="mensajeErrorReset" style="display: none;">
+        </div>
     </div>
 
 
@@ -139,7 +151,7 @@
                     },
                     success: function(response) {
                         // Mostrar el mensaje de éxito
-                        $('#mensajeExito').show();
+                        $('#mensajeExito').fadeIn().delay(3000).fadeOut();
                     },
                     error: function(xhr, status, error) {
                         alert('Hubo un error al guardar los datos. Inténtalo de nuevo.');
@@ -150,7 +162,23 @@
             }
         });
 
-
+        $('#resetBtn').click(function () {
+            $.ajax({
+                url: "{% url 'appsettingsreset_cartas' %}",
+                method: "POST",
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                success: function (response) {
+                    if (response.success) {
+                        $('#mensajeExitoReset').fadeIn().delay(3000).fadeOut();
+                    } else {
+                        $('#mensajeErrorReset').text(response.message).fadeIn().delay(3000).fadeOut();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $('#mensajeError').text("Error de conexión con el servidor").fadeIn().delay(3000).fadeOut();
+                }
+            });
+        });
 
     });
     

@@ -3,7 +3,7 @@ from django.urls import path
 from .views import *
 from django.contrib.auth.decorators import login_required
 
-from appMain.views import matriculados_index, matriculados_filtro
+from appMain.views import matriculados_index, matriculados_filtro, reset_numero_cartas
 
 urlpatterns = [
     path('', index,name='home'),
@@ -14,5 +14,7 @@ urlpatterns = [
     # path('salir/', salir,name='salir')
     #Matriculados
     path("matriculados/index", matriculados_index, name="appmatriculadosindex"),
-    path("matriculados/filtro/<fecha1>/<fecha2>", matriculados_filtro, name="appmatriculadosfiltro")
+    path("matriculados/filtro/<fecha1>/<fecha2>", matriculados_filtro, name="appmatriculadosfiltro"),
+    path("settings/reset/cartas", reset_numero_cartas , name="appsettingsreset_cartas"),
+
 ]
