@@ -2,3 +2,6 @@
 **/__pycache__/
 *.py.swo
 /cobranzas/*.*
+
+appsettingsCartas/migrations/[0-9]*_*.py
+!appsettingsCartas/migrations/__init__.py
