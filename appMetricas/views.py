@@ -47,7 +47,7 @@ def descargar_lista_deben(request):
 
 def obtener_deudores(request, plantilla,meses):
     
-    vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
+    vcmtos = {3:31, 4:30, 5:31, 6:30, 7:31, 8:30, 9:30, 10:31, 11:29, 12:22}
     #meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
     
     fecha_actual = dt.now().date()
