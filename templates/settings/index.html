@@ -60,7 +60,40 @@
             </form>
             <br>
         </div>
+        
+
+
+        <h5>Otros Datos de Configuración</h5>
+        <br>
+        <div class="row">
+            <div class="col-12 col-md-6 mb-3">
+                <label for="url">URL</label>
+                <input type="text" class="form-control form-control-sm" value="{{ url }}" id="url" name="url">
+            </div>
             
+            <div class="col-12 col-md-6 mb-3">
+                <label for="ano_actual">Año Actual</label>
+                <input type="number" class="form-control form-control-sm" value="{{ ano_actual }}" id="ano_actual" name="ano_actual" min="2020" max="2099" step="1" required>
+            </div>
+            
+            <div class="col-12 col-md-6 mb-3">
+                <label for="monto_pago">Monto Actual</label>
+                <input type="number" class="form-control form-control-sm" value="{{ monto_pago }}" id="monto_pago" name="monto_pago">
+            </div>
+
+        </div>
+        <!-- Botón de guardar con col-auto para ajustar su tamaño -->
+        <div class="row">
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary btn-sm" id="guardarBtn">Guardar</button>
+            </div>
+        </div>
+
+        <!-- Mensaje de éxito que aparecerá después de guardar -->
+        <div class="alert alert-success mt-3" id="mensajeExito" style="display: none;">
+            Configuración guardada con éxito.
+        </div>
+
 
     </div>
 
@@ -83,8 +116,45 @@
                 $('#dia, #mes, #ano').prop('readonly', isChecked);
             });
         }, 1000); // 1000 milisegundos = 1 segundo
+
+
+
+        $('#guardarBtn').on('click', function() {
+            // Obtener los valores de los campos
+            var url = $('#url').val();
+            var ano_actual = $('#ano_actual').val();
+            var monto_pago = $('#monto_pago').val();
+
+            // Verificar que los campos no estén vacíos
+            if (url && ano_actual && monto_pago) {
+                // Enviar los datos a la vista utilizando AJAX
+                $.ajax({
+                    url: '{% url "appsettingsdatos_save" %}',  // Aquí se obtiene la URL de la vista
+                    type: 'POST',
+                    data: {
+                        'url': url,
+                        'ano_actual': ano_actual,
+                        'monto_pago': monto_pago,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}',  // CSRF Token para proteger la solicitud
+                    },
+                    success: function(response) {
+                        // Mostrar el mensaje de éxito
+                        $('#mensajeExito').show();
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Hubo un error al guardar los datos. Inténtalo de nuevo.');
+                    }
+                });
+            } else {
+                alert('Por favor, completa todos los campos.');
+            }
+        });
+
+
+
     });
     
+  
 
 
 </script>
