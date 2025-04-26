@@ -63,7 +63,7 @@
         
 
 
-        <h5>Otros Datos de Configuración</h5>
+        <h5>Configuración Notificaciones</h5>
         <br>
         <div class="row">
             <div class="col-12 col-md-6 mb-3">
@@ -80,7 +80,7 @@
                 <label for="monto_pago">Monto Actual</label>
                 <input type="number" class="form-control form-control-sm" value="{{ monto_pago }}" id="monto_pago" name="monto_pago">
             </div>
-
+            
         </div>
         <!-- Botón de guardar con col-auto para ajustar su tamaño -->
         <div class="row">
@@ -88,15 +88,52 @@
                 <button type="button" class="btn btn-primary btn-sm" id="guardarBtn">Guardar</button>
             </div>
         </div>
-
+        
         <!-- Mensaje de éxito que aparecerá después de guardar -->
         <div class="alert alert-success mt-3" id="mensajeExito" style="display: none;">
             Configuración guardada con éxito.
             <br>
         </div>
         
-        <h5>Resetear Números de cartas a 0</h5>
+
+
+
         <br>
+        <div class="mt-3">
+            <h5>Configuración Ventas Sincronizadas</h5>
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-12 col-md-6 mb-3">
+                <label for="url">URL</label>
+                <input type="text" class="form-control form-control-sm" value="{{settingsventas.url}}" id="url_ventas" name="url_ventas">
+            </div>
+            
+            <div class="col-12 col-md-6 mb-3">
+                <label for="token">Token</label>
+                <input type="token" class="form-control form-control-sm" value="{{settingsventas.token}}" id="token_ventas" name="token_ventas" required>
+            </div>
+                   
+        </div>
+        <!-- Botón de guardar con col-auto para ajustar su tamaño -->
+        <div class="row">
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary btn-sm" id="guardarBtnConfVentas">Guardar</button>
+            </div>
+        </div>
+        
+        <!-- Mensaje de éxito que aparecerá después de guardar -->
+        <div class="alert alert-success mt-3" id="mensajeVentaSinc" style="display: none;">
+            Configuración Ventas Sinc. guardada con éxito.
+            <br>
+        </div>
+        
+        <br>
+
+
+        <div class="mt-3">
+            <h5>Resetear Números de cartas a 0</h5>
+        </div> 
         <div class="row">
             <div class="col-auto">
                 <button type="button" class="btn btn-primary btn-sm" id="resetBtn">Resetear Número de Cartas</button>
@@ -180,9 +217,32 @@
             });
         });
 
+
+        $('#guardarBtnConfVentas').on('click', function () {
+            const url = $('#url_ventas').val();
+            const token = $('#token_ventas').val();
+
+            $.ajax({
+                url: '{% url "appguardarconfiguracionventa_save" %}',
+                method: 'POST',
+                data: {
+                    'url': url,
+                    'token': token,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    $('#mensajeVentaSinc').fadeIn().delay(2000).fadeOut();
+                },
+                error: function (xhr, status, error) {
+                    alert("Error al guardar la configuración: " + xhr.responseText);
+                }
+            });
+        });
+
+
     });
     
-  
+    
 
 
 </script>

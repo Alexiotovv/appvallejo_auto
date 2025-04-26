@@ -5,5 +5,6 @@ urlpatterns = [
     path("settings/index", index , name="appsettingsindex"),
     path("settings/notarial/save", save_setting , name="appsettingsnotarial_save"),
     path("settings/datos/save", save_settingdatos , name="appsettingsdatos_save"),
+    path("settings/venta/save", guardar_configuracion_venta , name="appguardarconfiguracionventa_save"),
 
 ]

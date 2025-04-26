@@ -46,4 +46,11 @@ class AlumnosTableApi(models.Model):
     TelefonoTutor = models.CharField(max_length=100,null=True, blank=True)
     FirstNameTutor = models.CharField(max_length=250,null=True, blank=True)
     LastNameTutor = models.CharField(max_length=250,null=True, blank=True)
-  
+
+class VentaSincronizada(models.Model):
+    id_operation = models.BigIntegerField()
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, default='pendiente')
+
+    def __str__(self):
+        return f"Venta {self.id_operation} - {self.estado}"

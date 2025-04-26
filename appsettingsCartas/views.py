@@ -2,13 +2,14 @@ from django.shortcuts import render,redirect
 from django.contrib import messages
 from django.http import JsonResponse
 
-from appsettingsCartas.models import settingsCartas, settingsDatos
+from appsettingsCartas.models import settingsCartas, settingsDatos, SettingsVentaSincronizada
 import datetime
 
 def index(request):
     # Obtener el primer registro de la tabla settingsCartas si existe
     settings = settingsCartas.objects.first()
     settingsdatos = settingsDatos.objects.first()
+    settingsventas = SettingsVentaSincronizada.objects.first()
     url=""
     ano_actual=""
     monto_pago=0
@@ -31,7 +32,8 @@ def index(request):
         "mes": settings.Mes if settings else "",
         "ano": settings.Ano if settings else "",
         "estado": settings.Estado if settings else False,
-        "url":url,"ano_actual":ano_actual,"monto_pago":monto_pago
+        "url":url,"ano_actual":ano_actual,"monto_pago":monto_pago,
+        "settingsventas":settingsventas
     }
 
 
@@ -94,4 +96,17 @@ def save_settingdatos(request):
             )
 
         return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+def guardar_configuracion_venta(request):
+    if request.method == 'POST':
+        url = request.POST.get('url')
+        token = request.POST.get('token')
+
+        config, _ = SettingsVentaSincronizada.objects.get_or_create(id=1)
+        config.url = url
+        config.token = token
+        config.save()
+
+        return JsonResponse({'status': 'ok'})
     return JsonResponse({'status': 'error'}, status=400)
