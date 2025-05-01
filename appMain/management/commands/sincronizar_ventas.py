@@ -18,7 +18,9 @@ class Command(BaseCommand):
 
         API_URL = config.url
         API_TOKEN = config.token
-
+        API_URL = "https://colcoopcv.com/api/ventas/registrar"
+        API_TOKEN = "ed277f6fc85c1d78db1ca4c86c04700b10d556d7"
+        
         # 🔹 Obtener el último ID sincronizado
         ultimo_id = VentaSincronizada.objects.aggregate(models.Max('id_operation'))['id_operation__max'] or 0
 
