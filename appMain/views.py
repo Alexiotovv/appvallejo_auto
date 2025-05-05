@@ -117,7 +117,7 @@ def descargar_deudores(request):
     return response
 
 def generar_deudores(data):
-    vcmtos = {3:31, 4:30, 5:31, 6:30, 7:31, 8:30, 9:30, 10:31, 11:29, 12:22}    
+    vcmtos = {3:31, 4:30, 5:31, 6:30, 7:31, 8:30, 9:30, 10:31, 11:29, 12:22}
     fecha_actual = dt.now().date()
     mes_actual = dt.now().month
     fecha_vcmto = fecha_actual.replace(day=vcmtos[mes_actual])

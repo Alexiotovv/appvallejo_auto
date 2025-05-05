@@ -420,10 +420,9 @@ def obtener_datos_de_api(url):
         print("Something went wrong:", err)
     return None        
 
-def guardar_numeros_cartas(request):
-    
-    vcmtos = {3:27, 4:30, 5:31, 6:28, 7:31, 8:29, 9:30, 10:31, 11:28, 12:20}
-    
+def guardar_numeros_cartas(request):    
+    vcmtos = {3:31, 4:30, 5:31, 6:30, 7:31, 8:30, 9:30, 10:31, 11:29, 12:22}
+
     fecha_actual = dt.now().date()
     mes_actual = dt.now().month
 
