@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect, get_object_or_404
 from appMetricas.views import obtener_datos_de_api
 from django.db import connections
 from django.db import connection
@@ -12,7 +12,44 @@ from django.http import HttpResponse
 from django.core.serializers import serialize
 from datetime import datetime
 from appsettingsCartas.models import settingsDatos
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
+@require_POST
+@csrf_exempt
+def actualizar_cartas_enviadas(request):
+    carta_id = request.POST.get('id')
+    numero_carta = request.POST.get('numero_carta')
+
+    if carta_id:
+        try:
+            carta = CartasEnviadas.objects.get(pk=carta_id)
+            carta.numero_carta = numero_carta
+            carta.save()
+            return JsonResponse({'success': True})
+        except CartasEnviadas.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'La carta con ese ID no existe.'}, status=404)
+    else:
+        return JsonResponse({'success': False, 'error': 'ID no proporcionado.'}, status=400)
+    
+
+def index_cartas_enviadas(request):
+
+    data = []
+    for carta in CartasEnviadas.objects.all():
+        alumno = AlumnosTableApi.objects.filter(Dni=carta.dni_alumno).first()
+        if alumno:
+            data.append({
+                'id': carta.id,
+                'dni': alumno.Dni,
+                'apellido_paterno': alumno.ApellidoPaterno,
+                'apellido_materno': alumno.ApellidoMaterno,
+                'nombres': alumno.Nombres,
+                'numero_carta': carta.numero_carta,
+                'grado': f'{alumno.Grado}-{alumno.Seccion}',
+            })
+
+    return render(request,'cartasenviadas/index_cartasenviadas.html', {'data': data})
 
 def cant_pagos_nivel(request):
     
@@ -57,25 +94,22 @@ def index(request):
 
 def refrescar_datos(request):
     datos_url=""
-    # datos_ano_actual=""
-    # datos_monto_pago=0
+
     datos= settingsDatos.objects.first()
     if datos:
         datos_url = datos.url
-        # datos_ano_actual = datos.ano_actual
-        # datos_monto_pago = datos.monto_pago
     else:
         datos_url="https://colcoopcv.com/listar/matriculados/2025",
-        # datos_ano_actual = datetime.date.today().year,
-        # datos_monto_pago = 270
-        
+
+    #Aquí sería obtener view_pagos de la base de datos de colcoopcv postgre
     connection = connections['facturacion']
     connection.ensure_connection()
 
     cursor = connection.connection.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute("SELECT * FROM view_pagos vp")
     pagos = cursor.fetchall()
-
+    #Hasta aquí
+    
     url = datos_url
     alumnos = obtener_datos_de_api(url)
     campo_no_deseado = 'Id'
