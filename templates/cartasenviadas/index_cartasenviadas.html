@@ -1,0 +1,124 @@
+{% extends "bases/base.html" %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+
+    <div class="row">
+        <label for="">Cartas Enviadas</label>
+        <div class="container mt-4">
+        <table id="cartasTable" class="table table-stripped">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Acción</th>
+                <th>NumeroCarta</th>
+                <th>DNI</th>
+                <th>Apellido Paterno</th>
+                <th>Apellido Materno</th>
+                <th>Nombres</th>
+                <th>Grado</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for item in data %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm editar-btn"
+                                data-id="{{ item.id }}"
+                                data-dni="{{ item.dni }}"
+                                data-numero="{{ item.numero_carta }}">
+                                Editar
+                            </button>
+                        </td>
+                        <td>{{ item.numero_carta }}</td>
+                        <td>{{ item.dni }}</td>
+                        <td>{{ item.apellido_paterno }}</td>
+                        <td>{{ item.apellido_materno }}</td>
+                        <td>{{ item.nombres }}</td>
+                        <td>{{ item.grado }}</td>
+                        
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    
+
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="editarModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <form id="editarForm">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h5 class="modal-title">Editar Número de Carta</h5>
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+            <input type="hidden" name="id" id="modalId">
+            <div class="form-group">
+                <label for="numeroCarta">Número de Carta</label>
+                <input type="number" class="form-control" id="numeroCarta" name="numero_carta" required>
+            </div>
+            </div>
+            <div class="modal-footer">
+            <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+            </div>
+        </div>
+        </form>
+    </div>
+    </div>
+
+
+
+{% endblock content %}
+
+{% block js %}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+        $(document).ready(function () {
+            $('#cartasTable').DataTable();
+
+            $(document).on('click', '.editar-btn', function () {
+                const id = $(this).data('id');
+                const numero = $(this).data('numero');
+                $('#modalId').val(id);
+                $('#numeroCarta').val(numero);
+                $('#editarModal').modal('show');
+            });
+        
+            $('#editarForm').submit(function (e) {
+                e.preventDefault();
+                const id = $('#modalId').val();
+                const numero = $('#numeroCarta').val();
+
+                $.ajax({
+                    url: "{% url 'appactualizar_carta' %}",
+                    method: 'POST',
+                    data: {
+                    'id': id,
+                    'numero_carta': numero,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function () {
+                    location.reload();
+                    },
+                    error: function () {
+                    alert('Error al guardar.');
+                    }
+                });
+            });
+        });
+    </script>
+
+{% endblock js %}
