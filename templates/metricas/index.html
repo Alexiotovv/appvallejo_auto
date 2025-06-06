@@ -150,24 +150,42 @@
     
     <script>
         function obtenerDatos(plantilla){
-            meses=$("#meses").val();
+            let meses = $("#meses").val();
 
             $.ajax({
                 type: "GET",
-                url: "/deudores/obtener/"+plantilla+"/"+meses,
+                url: "/deudores/obtener/" + plantilla + "/" + meses,
                 dataType: "json",
                 beforeSend: function() {
-                    $("#spinner").prop('hidden',false);
-                    $("#espere").text("Procesando Datos, por favor espere...")
-                    $("#espere").prop('hidden',false)
+                    $("#spinner").prop('hidden', false);
+                    $("#espere").text("Procesando Datos, por favor espere...");
+                    $("#espere").prop('hidden', false);
                 },
                 success: function (data) {
-                    $("#archivo_generado").prop('hidden',false)
-                    $("#spinner").prop('hidden',true);
-                    $("#espere").text("Completado!")
+                    $("#archivo_generado").prop('hidden', false);
+                    $("#spinner").prop('hidden', true);
+                    $("#espere").text("Completado!");
+
+                    // Descargar archivo automáticamente
+                    if (data.data === 'success' && data.file_url) {
+                        const link = document.createElement('a');
+                        link.href = data.file_url;
+                        link.download = ''; // Puedes ponerle un nombre si lo deseas
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } else {
+                        alert("No se pudo generar el archivo");
+                    }
+                },
+                error: function () {
+                    alert("Error en la solicitud");
+                    $("#spinner").prop('hidden', true);
+                    $("#espere").text("Error al procesar");
                 }
             });
         }
+
 
         function obtenerDatosNotarial(plantilla){
             meses=$("#desde_mes").val();

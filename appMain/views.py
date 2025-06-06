@@ -14,6 +14,7 @@ from datetime import datetime
 from appsettingsCartas.models import settingsDatos
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from utils.text_utils import reemplazar_caracteres  # ajusta esta importación según tu estructura real
 
 @require_POST
 @csrf_exempt
@@ -224,6 +225,8 @@ def generar_pagos():
         dni = (alumno.Dni).strip()
         apoderados=apoderados_dict.get(dni,{})
         direcciones=direcciones_dic.get(dni,{})
+        apoderado_limpio = reemplazar_caracteres(apoderados.get('Apoderado'))
+        direccion_limpia = reemplazar_caracteres(direcciones.get('Direccion'))
         combinado = {
             # 'id': alumno.Id_alumno,
             'DNI': alumno.Dni,
@@ -234,8 +237,8 @@ def generar_pagos():
             'Grado': alumno.Grado,
             'Seccion': alumno.Seccion,
             'Mes': [(p.Mes).upper() for p in pagos if p.Dni == dni],
-            'Apoderado': apoderados.get('Apoderado'),
-            'Direccion': direcciones.get('Direccion'),
+            'Apoderado': apoderado_limpio,
+            'Direccion': direccion_limpia,
             'Monto': [p.Monto for p in pagos if p.Dni == dni],
             'Descripcion': [p.descripcion for p in pagos if p.Dni == dni],
         }

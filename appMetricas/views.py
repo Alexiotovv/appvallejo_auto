@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.db import connections
 from django.db.utils import ConnectionDoesNotExist
-from django.http import JsonResponse,HttpResponse
+from django.http import JsonResponse,HttpResponse, FileResponse
 import MySQLdb
 import requests
 from datetime import datetime as dt
@@ -14,7 +14,7 @@ from django.conf import settings
 import shutil
 import datetime
 from appsettingsCartas.models import settingsCartas, settingsDatos
-
+from utils.text_utils import reemplazar_caracteres
 
 datos_url=""
 datos_ano_actual=""
@@ -120,17 +120,25 @@ def obtener_deudores(request, plantilla,meses):
             # Filtrar filas donde MesesDebeTemp comience exactamente desde `mes_inicio`
             df = df[df['MesesDebeTemp'].apply(lambda x: x[0] == mes_inicio)]
         
-        print(df)
     ############cierre del bloque que se repite##########333
     
         
     borrar_carpetas_media()
     generar_imagenes_cobranzas(df,plantilla,meses)
 
-    df.to_excel('media/lista_deben.xlsx')
+    df['Apoderado'] = df['Apoderado'].apply(reemplazar_caracteres)
+    df['Direccion'] = df['Direccion'].apply(reemplazar_caracteres)
     
-    resultado={'data':'success','message':'ok'}
-    return JsonResponse(resultado,safe=False)
+    # Crea un nombre de archivo único con fecha y hora
+    fecha_hora = dt.now().strftime("%Y%m%d_%H%M%S")
+    nombre_archivo = f'lista_deben_{fecha_hora}.xlsx'
+    ruta_archivo = os.path.join(settings.MEDIA_ROOT, nombre_archivo)
+    df.to_excel(ruta_archivo,index=False)
+
+    # Construir la URL pública para descarga
+    url_archivo = f"{settings.MEDIA_URL}{nombre_archivo}"
+
+    return JsonResponse({'data': 'success', 'message': 'ok', 'file_url': url_archivo})
 
 def limpiar_meses(meses_debe):
     # Filtra solo los meses (eliminando cualquier valor que no sea mes)
@@ -708,5 +716,4 @@ def descargar_lista_agradecimiento(request):
     else:
         return HttpResponse("El archivo no existe")
     
-
 
