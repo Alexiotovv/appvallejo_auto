@@ -147,7 +147,8 @@ def limpiar_meses(meses_debe):
     return meses_debe
 
 def generar_imagenes_cobranzas(df,plantilla,meses):
-    
+    imagenes_por_carpeta = {}
+
     fecha_actual = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
     
     if not os.path.exists('media/'+str(fecha_actual)+'/PRIMARIA/1°'):
@@ -330,6 +331,23 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             image_path = f"media/{fecha_actual}/SECUNDARIA/{grado}/{seccion}/{row['DNI']}_{nombre_alumno}.jpg"
 
         imagen.save(image_path)
+
+        # Obtener carpeta destino (sin el nombre del archivo)
+        carpeta_destino = os.path.dirname(image_path)
+
+        # Guardar la imagen en la lista correspondiente a la carpeta
+        if carpeta_destino not in imagenes_por_carpeta:
+            imagenes_por_carpeta[carpeta_destino] = []
+
+        imagenes_por_carpeta[carpeta_destino].append(image_path)
+
+
+    for carpeta, imagenes in imagenes_por_carpeta.items():
+        imagenes_obj = [Image.open(img).convert('RGB') for img in imagenes]
+        if imagenes_obj:
+            pdf_path = os.path.join(carpeta, 'cobranzas.pdf')
+            imagenes_obj[0].save(pdf_path, save_all=True, append_images=imagenes_obj[1:])
+
         
 def union_alumnos_pagos():
     resultados = []
