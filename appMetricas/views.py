@@ -310,7 +310,7 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             d.text((170,664), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
             
 
-            d.text((845,1175), (str(dia_papel)+" de "+ str(mes_papel) +" del "+ str(anhio_papel)),font=font, fill=(0, 0, 0))
+            d.text((845,1275), (str(dia_papel)+" de "+ str(mes_papel) +" del "+ str(anhio_papel)),font=font, fill=(0, 0, 0))
             
 
         nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
