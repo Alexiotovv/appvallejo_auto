@@ -271,7 +271,7 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             d.text((430,528), grado_papel,font=font, fill=(0, 0, 0))
             d.text((520,528), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
             d.text((330,635), meses_debe_papel,font=font, fill=(0, 0, 0))
-            d.text((800,1327), fecha_actual_largo,font=font, fill=(0, 0, 0))
+            d.text((800,1300), fecha_actual_largo,font=font, fill=(0, 0, 0))
             d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
         elif plantilla=='invitacion':
             
