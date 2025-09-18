@@ -271,7 +271,7 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             d.text((430,528), grado_papel,font=font, fill=(0, 0, 0))
             d.text((520,528), "'"+seccion_papel+"'",font=font, fill=(0, 0, 0))
             d.text((330,635), meses_debe_papel,font=font, fill=(0, 0, 0))
-            d.text((800,1225), fecha_actual_largo,font=font, fill=(0, 0, 0))
+            d.text((800,1327), fecha_actual_largo,font=font, fill=(0, 0, 0))
             d.text((305,580), direccion_cadena_corregida,font=font, fill=(0, 0, 0))
         elif plantilla=='invitacion':
             
@@ -310,8 +310,9 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
             d.text((170,664), meses_debe_papel,font=font_meses_debe, fill=(0, 0, 0))
             
 
-            d.text((845,1275), (str(dia_papel)+" de "+ str(mes_papel) +" del "+ str(anhio_papel)),font=font, fill=(0, 0, 0))
-            
+            d.text((845,1075), (str(dia_papel)+" de "+ str(mes_papel) +" del "+ str(anhio_papel)),font=font, fill=(0, 0, 0))
+            # d.text((890,1070), str(mes_papel),font=font, fill=(0, 0, 0))
+            # d.text((1060,1070), str(anhio_papel),font=font, fill=(0, 0, 0))
 
         nombre_alumno=(f"{row['ApellidoPaterno']} {row['ApellidoMaterno']}, {row['Nombres']}").strip()
         grado=row['Grado'][:1]+"°"
