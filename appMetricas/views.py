@@ -16,6 +16,7 @@ import datetime
 from appsettingsCartas.models import settingsCartas, settingsDatos
 from utils.text_utils import reemplazar_caracteres
 
+
 datos_url=""
 datos_ano_actual=""
 datos_monto_pago=0
@@ -45,10 +46,9 @@ def descargar_lista_deben(request):
         # Manejar el caso donde el archivo no existe
         return HttpResponse("El archivo no existe")
 
-def obtener_deudores(request, plantilla,meses):
+def obtener_deudores(request, plantilla, meses):
     
     vcmtos = {3:31, 4:30, 5:31, 6:30, 7:31, 8:30, 9:30, 10:31, 11:29, 12:22}
-    #meses = {'MATRICULA': 0, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7, 'AGOSTO': 8, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
     
     fecha_actual = dt.now().date()
     mes_actual = dt.now().month
@@ -90,13 +90,90 @@ def obtener_deudores(request, plantilla,meses):
         meses_debe.append(f'S/ {deuda_total}')
         return meses_debe
         
-
     df['MesesDebe'] = df.apply(lambda row: obtener_meses_debe(row['Mes'], row['Monto'], row['Descripcion']), axis=1)
     df = df[df['MesesDebe'].apply(len) > 1]
     meses = int(meses)
     df['MesesDebeTemp'] = df['MesesDebe']
     df['MesesDebeTemp'] = df['MesesDebeTemp'].apply(limpiar_meses)
+
     
+    # # --- 1. Convertir FechaMat en fecha y obtener mes y día ---
+    # df['FechaMat'] = pd.to_datetime(df['FechaMat'], errors='coerce')
+    # df['MesMat'] = df['FechaMat'].dt.month
+    # df['DiaMat'] = df['FechaMat'].dt.day
+
+    # # --- 2️. Calcular mes de inicio ---
+    # def calcular_mes_inicio(row):
+    #     mes_mat = row['MesMat']
+    #     dia_mat = row['DiaMat']
+
+    #     if pd.isna(mes_mat) or pd.isna(dia_mat):
+    #         return None
+
+    #     if dia_mat <= 15:
+    #         mes_inicio = mes_mat
+    #     elif dia_mat <= 24:
+    #         mes_inicio = mes_mat
+    #     else:
+    #         mes_inicio = mes_mat + 1
+
+    #     if mes_inicio > 12:
+    #         mes_inicio = 12
+
+    #     return mes_inicio
+
+    # df['MesInicio'] = df.apply(calcular_mes_inicio, axis=1)
+
+    # # --- 3️⃣ Crear lista de meses a quitar (todos los anteriores al mes de inicio + marzo) ---
+    # meses_numero_a_nombre = {
+    #     1: 'ENERO', 2: 'FEBRERO', 3: 'MARZO', 4: 'ABRIL',
+    #     5: 'MAYO', 6: 'JUNIO', 7: 'JULIO', 8: 'AGOSTO',
+    #     9: 'SETIEMBRE', 10: 'OCTUBRE', 11: 'NOVIEMBRE', 12: 'DICIEMBRE'
+    # }
+
+    # def obtener_meses_quitar(row):
+    #     mes_inicio = row['MesInicio']
+    #     if pd.isna(mes_inicio):
+    #         return ['MARZO']  # si no hay fecha, al menos quita marzo
+    #     return [meses_numero_a_nombre[m] for m in range(1, int(mes_inicio)) if m != 3] + ['MARZO']
+
+    # df['MesesQuitar'] = df.apply(obtener_meses_quitar, axis=1)
+
+    # # --- 4️⃣ Aplicar filtros para limpiar MesesDebe y MesesDebeTemp ---
+    # df['MesesDebe'] = df.apply(lambda row: [m for m in row['MesesDebe'] if m not in row['MesesQuitar']], axis=1)
+    # df['MesesDebeTemp'] = df.apply(lambda row: [m for m in row['MesesDebeTemp'] if m not in row['MesesQuitar']], axis=1)
+    # df.drop(columns=['MesMat', 'DiaMat', 'MesInicio', 'MesesQuitar'], inplace=True, errors='ignore')
+
+    # # --- 5️⃣ Recalcular el monto total de deuda ---
+    # def recalcular_monto(row):
+    #     meses = row['MesesDebe']
+    #     medio_mes = row.get('MedioMes', False)
+
+    #     # Asegurar que meses sea lista
+    #     if not isinstance(meses, list) or len(meses) == 0:
+    #         return []
+
+    #     # Quitar posibles valores de monto previos ("S/ 1080.00", etc.)
+    #     meses_limpios = [m for m in meses if not str(m).startswith('S/')]
+
+    #     # Calcular deuda total
+    #     deuda_total = len(meses_limpios) * float(datos_monto_pago)
+
+    #     # Si tiene medio mes, el primer mes paga mitad
+    #     if medio_mes and len(meses_limpios) > 0:
+    #         deuda_total -= float(datos_monto_pago) / 2
+    #         meses_limpios[0] = meses_limpios[0]
+
+    #     # Agregar el total al final
+    #     meses_limpios.append(f"S/ {deuda_total:.2f}")
+
+    #     return meses_limpios
+
+    # # Aplicar a las columnas
+    # df['MesesDebe'] = df.apply(recalcular_monto, axis=1)
+    # df['MesesDebeTemp'] = df['MesesDebe']
+
+
     meses_nombres = {
         1: 'ENERO',
         2: 'FEBRERO',
@@ -187,9 +264,21 @@ def generar_imagenes_cobranzas(df,plantilla,meses):
     cartasenviadas_dict={cartas.dni_alumno:cartas.numero_carta for cartas in cartasenviadas}
     
     meses_fecha={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Setiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'}
-    dia_papel=dt.now().day # Notarial
-    mes_papel=meses_fecha.get(dt.now().month) # Notarial
-    anhio_papel=dt.now().year # Notarial
+    
+    
+    config = settingsCartas.objects.first()  # o filter(...).first()
+
+
+    if config and config.Estado:  # Si existe y está activo
+        dia_papel = dt.now().day
+        mes_papel = meses_fecha.get(dt.now().month)
+        anhio_papel = dt.now().year
+    else:
+        dia_papel = config.Dia
+        mes_papel = config.Mes
+        anhio_papel = config.Ano
+
+
     fecha_actual_largo=str(dia_papel)+" de "+ str(mes_papel) + " del "+ str(anhio_papel)
 
     if plantilla=='general':
@@ -393,6 +482,7 @@ def union_alumnos_pagos():
                 'TelefonoTutor': alumno.get('TelefonoTutor'),
                 'Grado': alumno.get('Grado'),
                 'Seccion': alumno.get('Seccion'),
+                'FechaMat': alumno.get('FechaMat'),
                 # Añadir campos de pagos (pueden ser nulos si no existen)
                 # 'id_operacion': pago.get('id_operacion'),
                 # 'id_persona': pago.get('id_persona'),
