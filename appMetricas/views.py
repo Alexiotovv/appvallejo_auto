@@ -20,12 +20,13 @@ from utils.text_utils import reemplazar_caracteres
 datos_url=""
 datos_ano_actual=""
 datos_monto_pago=0
-
+datos_url_meses_no_paga=""
 datos= settingsDatos.objects.first()
 if datos:
     datos_url = datos.url
     datos_ano_actual = datos.ano_actual
     datos_monto_pago = datos.monto_pago
+    datos_url_meses_no_paga = datos.url_meses_no_paga
 else:
     datos_url="https://colcoopcv.com/listar/matriculados/2025",
     datos_ano_actual = datetime.date.today().year,
@@ -61,24 +62,36 @@ def obtener_deudores(request, plantilla, meses):
         mes_ultimo_vcmto = mes_actual
 
     data = union_alumnos_pagos()
-    ###########este bloque se repite en la otra función es para optimizar
     df = pd.DataFrame(data)
+    
+    # Obtener meses que no debe pagar desde la API
+    meses_no_debe_pagar = obtener_alumnos_meses_no_pago_api(datos_url_meses_no_paga)
+    print(meses_no_debe_pagar)
+    # Crear diccionario para fácil acceso: {id_alumno: [meses_no_pago]}
+    meses_no_pago_dict = {}
+    for item in meses_no_debe_pagar:
+        alumno_id = item.get('Id')
+        if alumno_id:
+            meses_no_pago_dict[alumno_id] = item.get('MesesNoPago', [])
+    
+    print(f"Alumnos con meses no pago encontrados: {len(meses_no_pago_dict)}")
     
     # Lista de todos los meses de marzo a diciembre
     todos_los_meses = ['MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
     
     # Filtrar los meses hasta el último mes de vencimiento
-    meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
+    meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]
 
     def obtener_meses_debe(meses_pagados, montos_pagados, descripcion):
         meses_debe = []
         deuda_total = 0
+        
         for mes in meses_hasta_ultimo_vencimiento:
             total_monto_pagado = 0
             for i, mes_pagado in enumerate(meses_pagados):
                 if mes_pagado == mes:
                     if montos_pagados[i] >= datos_monto_pago or 'BECA' in descripcion[i]:
-                        total_monto_pagado = datos_monto_pago  # Esto asegura que el mes se considere pagado
+                        total_monto_pagado = datos_monto_pago
                         break
                     elif 'CUENTA' in descripcion[i] or montos_pagados[i] < datos_monto_pago:
                         total_monto_pagado += montos_pagados[i]
@@ -90,118 +103,70 @@ def obtener_deudores(request, plantilla, meses):
         meses_debe.append(f'S/ {deuda_total}')
         return meses_debe
         
+    # Primero calcular los meses que debe sin filtrar
     df['MesesDebe'] = df.apply(lambda row: obtener_meses_debe(row['Mes'], row['Monto'], row['Descripcion']), axis=1)
+    
+    # Ahora filtrar los meses que no debe pagar según el cronograma
+    def filtrar_meses_no_pago(row):
+        alumno_id = row['id']
+        meses_debe = row['MesesDebe'].copy()  # Hacer copia para no modificar el original directamente
+        
+        # Verificar si este alumno tiene meses que no debe pagar
+        if alumno_id in meses_no_pago_dict:
+            meses_no_pago = meses_no_pago_dict[alumno_id]
+            
+            # Si hay meses que no debe pagar, filtrarlos
+            if meses_no_pago:
+                # Separar el monto total (último elemento) de los meses
+                monto_total = meses_debe[-1] if meses_debe and isinstance(meses_debe[-1], str) and meses_debe[-1].startswith('S/') else 'S/ 0.00'
+                meses_sin_monto = [mes for mes in meses_debe if not (isinstance(mes, str) and mes.startswith('S/'))]
+                
+                # Filtrar meses que NO deben estar en la lista de no pago
+                meses_filtrados = [mes for mes in meses_sin_monto if mes not in meses_no_pago]
+                
+                # Recalcular el monto total basado en los meses filtrados
+                nuevo_monto_total = len(meses_filtrados) * datos_monto_pago
+                
+                # Reconstruir la lista con el nuevo monto
+                meses_filtrados.append(f'S/ {nuevo_monto_total}')
+                
+                print(f"Alumno ID {alumno_id}: Filtrando meses {meses_no_pago}. De {meses_sin_monto} a {meses_filtrados[:-1]}")
+                return meses_filtrados
+        
+        # Si no tiene meses que filtrar, devolver la lista original
+        return meses_debe
+    
+    # Aplicar el filtro
+    df['MesesDebe'] = df.apply(filtrar_meses_no_pago, axis=1)
+    
+    # DEBUG: Mostrar algunos ejemplos
+    # alumnos_filtrados = df[df['id'].isin(meses_no_pago_dict.keys())]
+    # print(f"\nEjemplos de alumnos con meses filtrados:")
+    # for i, row in alumnos_filtrados.head(3).iterrows():
+    #     meses_no_pago = meses_no_pago_dict.get(row['id'], [])
+    #     print(f"ID: {row['id']} - Alumno: {row['Nombres']}")
+    #     print(f"  Meses no pago: {meses_no_pago}")
+    #     print(f"  MesesDebe después: {row['MesesDebe']}")
+    
     df = df[df['MesesDebe'].apply(len) > 1]
     meses = int(meses)
     df['MesesDebeTemp'] = df['MesesDebe']
     df['MesesDebeTemp'] = df['MesesDebeTemp'].apply(limpiar_meses)
 
-    
-    # # --- 1. Convertir FechaMat en fecha y obtener mes y día ---
-    # df['FechaMat'] = pd.to_datetime(df['FechaMat'], errors='coerce')
-    # df['MesMat'] = df['FechaMat'].dt.month
-    # df['DiaMat'] = df['FechaMat'].dt.day
-
-    # # --- 2️. Calcular mes de inicio ---
-    # def calcular_mes_inicio(row):
-    #     mes_mat = row['MesMat']
-    #     dia_mat = row['DiaMat']
-
-    #     if pd.isna(mes_mat) or pd.isna(dia_mat):
-    #         return None
-
-    #     if dia_mat <= 15:
-    #         mes_inicio = mes_mat
-    #     elif dia_mat <= 24:
-    #         mes_inicio = mes_mat
-    #     else:
-    #         mes_inicio = mes_mat + 1
-
-    #     if mes_inicio > 12:
-    #         mes_inicio = 12
-
-    #     return mes_inicio
-
-    # df['MesInicio'] = df.apply(calcular_mes_inicio, axis=1)
-
-    # # --- 3️⃣ Crear lista de meses a quitar (todos los anteriores al mes de inicio + marzo) ---
-    # meses_numero_a_nombre = {
-    #     1: 'ENERO', 2: 'FEBRERO', 3: 'MARZO', 4: 'ABRIL',
-    #     5: 'MAYO', 6: 'JUNIO', 7: 'JULIO', 8: 'AGOSTO',
-    #     9: 'SETIEMBRE', 10: 'OCTUBRE', 11: 'NOVIEMBRE', 12: 'DICIEMBRE'
-    # }
-
-    # def obtener_meses_quitar(row):
-    #     mes_inicio = row['MesInicio']
-    #     if pd.isna(mes_inicio):
-    #         return ['MARZO']  # si no hay fecha, al menos quita marzo
-    #     return [meses_numero_a_nombre[m] for m in range(1, int(mes_inicio)) if m != 3] + ['MARZO']
-
-    # df['MesesQuitar'] = df.apply(obtener_meses_quitar, axis=1)
-
-    # # --- 4️⃣ Aplicar filtros para limpiar MesesDebe y MesesDebeTemp ---
-    # df['MesesDebe'] = df.apply(lambda row: [m for m in row['MesesDebe'] if m not in row['MesesQuitar']], axis=1)
-    # df['MesesDebeTemp'] = df.apply(lambda row: [m for m in row['MesesDebeTemp'] if m not in row['MesesQuitar']], axis=1)
-    # df.drop(columns=['MesMat', 'DiaMat', 'MesInicio', 'MesesQuitar'], inplace=True, errors='ignore')
-
-    # # --- 5️⃣ Recalcular el monto total de deuda ---
-    # def recalcular_monto(row):
-    #     meses = row['MesesDebe']
-    #     medio_mes = row.get('MedioMes', False)
-
-    #     # Asegurar que meses sea lista
-    #     if not isinstance(meses, list) or len(meses) == 0:
-    #         return []
-
-    #     # Quitar posibles valores de monto previos ("S/ 1080.00", etc.)
-    #     meses_limpios = [m for m in meses if not str(m).startswith('S/')]
-
-    #     # Calcular deuda total
-    #     deuda_total = len(meses_limpios) * float(datos_monto_pago)
-
-    #     # Si tiene medio mes, el primer mes paga mitad
-    #     if medio_mes and len(meses_limpios) > 0:
-    #         deuda_total -= float(datos_monto_pago) / 2
-    #         meses_limpios[0] = meses_limpios[0]
-
-    #     # Agregar el total al final
-    #     meses_limpios.append(f"S/ {deuda_total:.2f}")
-
-    #     return meses_limpios
-
-    # # Aplicar a las columnas
-    # df['MesesDebe'] = df.apply(recalcular_monto, axis=1)
-    # df['MesesDebeTemp'] = df['MesesDebe']
-
-
+    # Resto del código igual...
     meses_nombres = {
-        1: 'ENERO',
-        2: 'FEBRERO',
-        3: 'MARZO',
-        4: 'ABRIL',
-        5: 'MAYO',
-        6: 'JUNIO',
-        7: 'JULIO',
-        8: 'AGOSTO',
-        9: 'SETIEMBRE',
-        10: 'OCTUBRE',
-        11: 'NOVIEMBRE',
-        12: 'DICIEMBRE'
+        1: 'ENERO', 2: 'FEBRERO', 3: 'MARZO', 4: 'ABRIL', 5: 'MAYO',
+        6: 'JUNIO', 7: 'JULIO', 8: 'AGOSTO', 9: 'SETIEMBRE', 10: 'OCTUBRE',
+        11: 'NOVIEMBRE', 12: 'DICIEMBRE'
     }
 
     if plantilla == 'notarial':
-        # Filtrar los meses que comienzan desde el mes indicado en adelante
         if meses in meses_nombres:
-            mes_inicio = meses_nombres[meses]  # Obtener el nombre del mes correspondiente
-            
-            # Filtrar filas donde MesesDebeTemp comience exactamente desde `mes_inicio`
+            mes_inicio = meses_nombres[meses]
             df = df[df['MesesDebeTemp'].apply(lambda x: x[0] == mes_inicio)]
-        
-    ############cierre del bloque que se repite##########333
     
-        
     borrar_carpetas_media()
-    generar_imagenes_cobranzas(df,plantilla,meses)
+    generar_imagenes_cobranzas(df, plantilla, meses)
 
     df['Apoderado'] = df['Apoderado'].apply(reemplazar_caracteres)
     df['Direccion'] = df['Direccion'].apply(reemplazar_caracteres)
@@ -210,12 +175,109 @@ def obtener_deudores(request, plantilla, meses):
     fecha_hora = dt.now().strftime("%Y%m%d_%H%M%S")
     nombre_archivo = f'lista_deben_{fecha_hora}.xlsx'
     ruta_archivo = os.path.join(settings.MEDIA_ROOT, nombre_archivo)
-    df.to_excel(ruta_archivo,index=False)
+    df.to_excel(ruta_archivo, index=False)
 
     # Construir la URL pública para descarga
     url_archivo = f"{settings.MEDIA_URL}{nombre_archivo}"
 
     return JsonResponse({'data': 'success', 'message': 'ok', 'file_url': url_archivo})
+
+
+# def obtener_deudores(request, plantilla, meses):
+    
+#     vcmtos = {3:31, 4:30, 5:31, 6:30, 7:31, 8:30, 9:30, 10:31, 11:29, 12:22}
+    
+#     fecha_actual = dt.now().date()
+#     mes_actual = dt.now().month
+
+#     fecha_vcmto = fecha_actual.replace(day=vcmtos[mes_actual])
+
+#     if fecha_actual < fecha_vcmto:
+#         mes_ultimo_vcmto = mes_actual - 1
+#     else:
+#         mes_ultimo_vcmto = mes_actual
+
+#     data = union_alumnos_pagos()
+#     ###########este bloque se repite en la otra función es para optimizar
+#     df = pd.DataFrame(data)
+    
+#     # Lista de todos los meses de marzo a diciembre
+#     todos_los_meses = ['MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE']
+    
+#     # Filtrar los meses hasta el último mes de vencimiento
+#     meses_hasta_ultimo_vencimiento = todos_los_meses[:mes_ultimo_vcmto - 2]  # -2 porque MARZO es el índice 0 y necesitamos hasta el mes anterior al último vencimiento
+
+#     def obtener_meses_debe(meses_pagados, montos_pagados, descripcion):
+#         meses_debe = []
+#         deuda_total = 0
+#         for mes in meses_hasta_ultimo_vencimiento:
+#             total_monto_pagado = 0
+#             for i, mes_pagado in enumerate(meses_pagados):
+#                 if mes_pagado == mes:
+#                     if montos_pagados[i] >= datos_monto_pago or 'BECA' in descripcion[i]:
+#                         total_monto_pagado = datos_monto_pago  # Esto asegura que el mes se considere pagado
+#                         break
+#                     elif 'CUENTA' in descripcion[i] or montos_pagados[i] < datos_monto_pago:
+#                         total_monto_pagado += montos_pagados[i]
+
+#             if total_monto_pagado < datos_monto_pago:
+#                 meses_debe.append(mes)
+#                 deuda_total += datos_monto_pago - total_monto_pagado
+
+#         meses_debe.append(f'S/ {deuda_total}')
+#         return meses_debe
+        
+#     df['MesesDebe'] = df.apply(lambda row: obtener_meses_debe(row['Mes'], row['Monto'], row['Descripcion']), axis=1)
+
+
+#     df = df[df['MesesDebe'].apply(len) > 1]
+#     meses = int(meses)
+#     df['MesesDebeTemp'] = df['MesesDebe']
+#     df['MesesDebeTemp'] = df['MesesDebeTemp'].apply(limpiar_meses)
+
+
+#     meses_nombres = {
+#         1: 'ENERO',
+#         2: 'FEBRERO',
+#         3: 'MARZO',
+#         4: 'ABRIL',
+#         5: 'MAYO',
+#         6: 'JUNIO',
+#         7: 'JULIO',
+#         8: 'AGOSTO',
+#         9: 'SETIEMBRE',
+#         10: 'OCTUBRE',
+#         11: 'NOVIEMBRE',
+#         12: 'DICIEMBRE'
+#     }
+
+#     if plantilla == 'notarial':
+#         # Filtrar los meses que comienzan desde el mes indicado en adelante
+#         if meses in meses_nombres:
+#             mes_inicio = meses_nombres[meses]  # Obtener el nombre del mes correspondiente
+            
+#             # Filtrar filas donde MesesDebeTemp comience exactamente desde `mes_inicio`
+#             df = df[df['MesesDebeTemp'].apply(lambda x: x[0] == mes_inicio)]
+        
+#     ############cierre del bloque que se repite##########333
+    
+        
+#     borrar_carpetas_media()
+#     generar_imagenes_cobranzas(df,plantilla,meses)
+
+#     df['Apoderado'] = df['Apoderado'].apply(reemplazar_caracteres)
+#     df['Direccion'] = df['Direccion'].apply(reemplazar_caracteres)
+    
+#     # Crea un nombre de archivo único con fecha y hora
+#     fecha_hora = dt.now().strftime("%Y%m%d_%H%M%S")
+#     nombre_archivo = f'lista_deben_{fecha_hora}.xlsx'
+#     ruta_archivo = os.path.join(settings.MEDIA_ROOT, nombre_archivo)
+#     df.to_excel(ruta_archivo,index=False)
+
+#     # Construir la URL pública para descarga
+#     url_archivo = f"{settings.MEDIA_URL}{nombre_archivo}"
+
+#     return JsonResponse({'data': 'success', 'message': 'ok', 'file_url': url_archivo})
 
 def limpiar_meses(meses_debe):
     # Filtra solo los meses (eliminando cualquier valor que no sea mes)
@@ -535,6 +597,21 @@ def obtener_datos_de_api(url):
     except requests.exceptions.RequestException as err:
         print("Something went wrong:", err)
     return None        
+def obtener_alumnos_meses_no_pago_api(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Esto generará una excepción si la solicitud no fue exitosa
+        datos = response.json()  # Asumiendo que la respuesta es JSON
+        return datos
+    except requests.exceptions.HTTPError as errh:
+        print("HTTP Error:", errh)
+    except requests.exceptions.ConnectionError as errc:
+        print("Error Connecting:", errc)
+    except requests.exceptions.Timeout as errt:
+        print("Timeout Error:", errt)
+    except requests.exceptions.RequestException as err:
+        print("Something went wrong:", err)
+    return None   
 
 def guardar_numeros_cartas(request):    
     vcmtos = {3:31, 4:30, 5:31, 6:30, 7:31, 8:30, 9:30, 10:31, 11:29, 12:22}

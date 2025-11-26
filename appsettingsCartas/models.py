@@ -10,6 +10,7 @@ class settingsCartas(models.Model):
 class settingsDatos(models.Model):
     url = models.CharField(max_length=400,null=True, blank=True)
     ano_actual = models.CharField(max_length=4,null=True, blank=True)
+    url_meses_no_paga = models.CharField(max_length=400,null=True, blank=True)
     monto_pago = models.DecimalField(max_digits=10, decimal_places=2, null=True,blank=True)
 
 class SettingsVentaSincronizada(models.Model):

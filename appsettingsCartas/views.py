@@ -10,33 +10,44 @@ def index(request):
     settings = settingsCartas.objects.first()
     settingsdatos = settingsDatos.objects.first()
     settingsventas = SettingsVentaSincronizada.objects.first()
-    url=""
-    ano_actual=""
-    monto_pago=0
+    
+    url = ""
+    ano_actual = ""
+    monto_pago = 0
+    url_meses_no_paga = ""
+    
     if settingsdatos:
         url = settingsdatos.url
         ano_actual = settingsdatos.ano_actual
         monto_pago = settingsdatos.monto_pago
+        url_meses_no_paga = settingsdatos.url_meses_no_paga
     else:
-        datos=settingsDatos.objects.create(
+        # Crear registro por defecto
+        settingsdatos = settingsDatos.objects.create(
             url="https://colcoopcv.com/listar/matriculados/2025",
-            ano_actual = datetime.date.today().year,
-            monto_pago = 270.00
+            ano_actual=datetime.date.today().year,
+            monto_pago=270.00
         )
-        url = datos.url
-        ano_actual = datos.ano_actual
-        monto_pago = datos.monto_pago
+        # Usar el objeto creado
+        url = settingsdatos.url
+        ano_actual = settingsdatos.ano_actual
+        monto_pago = settingsdatos.monto_pago
+        url_meses_no_paga = settingsdatos.url_meses_no_paga
+
     # Pasar los valores al template
     context = {
         "dia": settings.Dia if settings else "",
         "mes": settings.Mes if settings else "",
         "ano": settings.Ano if settings else "",
         "estado": settings.Estado if settings else False,
-        "url":url,"ano_actual":ano_actual,"monto_pago":monto_pago,
-        "settingsventas":settingsventas
+        "url": url,
+        "ano_actual": ano_actual,
+        "monto_pago": monto_pago,
+        "settingsventas": settingsventas,
+        "url_meses_no_paga": url_meses_no_paga
+
     }
-
-
+    print(context)
     return render(request, 'settings/index.html', context)
 
 def save_setting(request):
@@ -80,6 +91,7 @@ def save_settingdatos(request):
         url = request.POST.get('url')
         ano_actual = request.POST.get('ano_actual')
         monto_pago = request.POST.get('monto_pago')
+        url_meses_no_paga = request.POST.get('url_meses_no_paga')  # Nuevo campo
         
         # Guardar los datos
         settings = settingsDatos.objects.first()
@@ -87,12 +99,14 @@ def save_settingdatos(request):
             settings.url = url
             settings.ano_actual = ano_actual
             settings.monto_pago = monto_pago
+            settings.url_meses_no_paga = url_meses_no_paga  # Nuevo campo
             settings.save()
         else:
             settings = settingsDatos.objects.create(
                 url=url,
                 ano_actual=ano_actual,
-                monto_pago=monto_pago
+                monto_pago=monto_pago,
+                url_meses_no_paga=url_meses_no_paga  # Nuevo campo
             )
 
         return JsonResponse({'status': 'success'})
